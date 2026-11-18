@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>backtogreen: your agent hears CI fail</title>
-<meta name="description" content="A Claude Code Stop hook. When CI fails on your pull request, the session that opened it is told and fixes it.">
+<meta name="description" content="A Claude Code Stop hook. When CI fails or a merge conflict blocks your pull request, the session that opened it is told and fixes it.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#090b0a">
 <link rel="canonical" href="https://backtogreen.flisk.si/">
@@ -16,7 +16,7 @@
 <meta property="og:site_name" content="backtogreen">
 <meta property="og:type" content="website">
 <meta property="og:title" content="backtogreen: your agent hears CI fail">
-<meta property="og:description" content="A Claude Code Stop hook. When CI fails on your pull request, the session that opened it is told and fixes it.">
+<meta property="og:description" content="A Claude Code Stop hook. When CI fails or a merge conflict blocks your pull request, the session that opened it is told and fixes it.">
 <meta property="og:url" content="https://backtogreen.flisk.si/">
 <meta property="og:image" content="https://backtogreen.flisk.si/og.png">
 <meta property="og:image:width" content="1200">
@@ -25,7 +25,7 @@
 <meta property="og:image:alt" content="backtogreen: your agent hears CI fail">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="backtogreen: your agent hears CI fail">
-<meta name="twitter:description" content="A Claude Code Stop hook. When CI fails on your pull request, the session that opened it is told and fixes it.">
+<meta name="twitter:description" content="A Claude Code Stop hook. When CI fails or a merge conflict blocks your pull request, the session that opened it is told and fixes it.">
 <meta name="twitter:image" content="https://backtogreen.flisk.si/og.png">
 <meta name="twitter:image:alt" content="backtogreen: your agent hears CI fail">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"backtogreen","url":"https://backtogreen.flisk.si/"},{"@type":"SoftwareSourceCode","name":"backtogreen","description":"A Claude Code Stop hook that tells your session when CI fails on your pull request.","codeRepository":"https://github.com/flisk-sh/failedci2claude","license":"https://opensource.org/licenses/MIT"},{"@type":"Organization","name":"Flisk","url":"https://flisk.sh","sameAs":["https://github.com/flisk-sh"]}]}</script>
@@ -186,7 +186,7 @@ footer .big{color:var(--fg);font-size:18px;margin-bottom:12px}
 <header class="hero"><div class="wrap">
   <div class="eyebrow">For Claude Code and GitHub pull requests · MIT</div>
   <h1><span id="scr" aria-label="Your agent hears CI fail.">Your agent hears CI <span class="x">fail.</span></span></h1>
-  <p class="lede">You push to a pull request. GitHub’s checks fail. The Claude session that opened it is told which check failed, finds the cause, and fixes it. You are not the messenger.</p>
+  <p class="lede">You push to a pull request. GitHub’s checks fail, or it hits a merge conflict. The Claude session that opened it is told what is wrong, finds the cause, and fixes it. You are not the messenger.</p>
   <div class="btns"><a class="btn p" href="#install">Install in two lines</a><a class="btn" href="#how">How it works ↓</a>
     <div class="agents" aria-label="Works with">
       <span class="wl">WORKS WITH</span>
@@ -198,11 +198,11 @@ footer .big{color:var(--fg);font-size:18px;margin-bottom:12px}
   <div class="flows">
     <div class="card flow">
       <div class="cap"><span><i class="tag tbad">BEFORE</i> you are the messenger</span><b id="cap-before">&nbsp;</b></div>
-      <svg id="svg-before" role="img" aria-label="Before: CI fails, you notice minutes later, copy the log, paste it into Claude, Claude fixes it and pushes."></svg>
+      <svg id="svg-before" role="img" aria-label="Before: a check fails or a conflict blocks it, you notice minutes later, copy the log, paste it into Claude, Claude fixes it and pushes."></svg>
     </div>
     <div class="card flow">
       <div class="cap"><span><i class="tag tok">AFTER</i> the session is told</span><b id="cap-after">&nbsp;</b></div>
-      <svg id="svg-after" role="img" aria-label="After: CI fails, the Stop hook wakes at the end of the turn, one gh call finds the failure, Claude fixes it, pushes, and CI turns green."></svg>
+      <svg id="svg-after" role="img" aria-label="After: a check fails or a conflict blocks it, the Stop hook wakes at the end of the turn, one gh call finds the failure, Claude fixes it, pushes, and CI turns green."></svg>
     </div>
   </div>
 </div></header>
@@ -399,7 +399,7 @@ function Flow(svg,cap,steps,hot,mark,kind){
 flows.push(Flow(document.getElementById("svg-before"),document.getElementById("cap-before"),[
  {t:"You push",s:"to your PR",i:"push",k:""},
  {t:"GitHub checks",s:"tests run",i:"checks",k:""},
- {t:"A check fails",s:"red ✗",i:"fail",k:"bad"},
+ {t:"PR goes red",s:"fail or conflict",i:"fail",k:"bad"},
  {t:"You spot it",s:"minutes later",i:"eye",k:"human"},
  {t:"Copy the error",s:"from GitHub",i:"clip",k:"human"},
  {t:"Paste in chat",s:"by hand",i:"chat",k:"human"},
@@ -409,7 +409,7 @@ flows.push(Flow(document.getElementById("svg-before"),document.getElementById("c
 flows.push(Flow(document.getElementById("svg-after"),document.getElementById("cap-after"),[
  {t:"You push",s:"to your PR",i:"push",k:""},
  {t:"GitHub checks",s:"tests run",i:"checks",k:""},
- {t:"A check fails",s:"red ✗",i:"fail",k:"bad"},
+ {t:"PR goes red",s:"fail or conflict",i:"fail",k:"bad"},
  {t:"Claude is told",s:"turn ends",i:"bell",k:""},
  {t:"Finds your PR",s:"one lookup",i:"find",k:""},
  {t:"Claude fixes",s:"reads, edits",i:"spark",k:""},
@@ -484,12 +484,13 @@ var rungsDef=[
  ["Already continuing?","stop_hook_active: skip, so it can never loop"],
  ["Which branches?","every worktree of this repo, minus main"],
  ["One gh call","your open PRs; match branches to them"],
- ["Any failed check?","new (PR, commit, failures) only"]
+ ["Any problem?","a failed check or a merge conflict, new ones only"]
 ];
 var scen=[
- {n:"CI is red",on:5,res:'<span class="ok">▸ block</span> “CI is failing on pull/212: Test. Find the cause, fix it, push.” Claude carries on.'},
- {n:"Already reported",on:5,stop:5,res:'<span class="dim">▸ silent.</span> That commit and failure set is in the seen file. Nothing repeats.'},
- {n:"All green",on:5,stop:5,res:'<span class="dim">▸ silent.</span> No failed check on any of your PRs.'},
+ {n:"CI is red",on:5,res:'<span class="ok">▸ block</span> “Your pull requests need attention: pull/212: failed checks: Test. Find the cause, fix it, push.” Claude carries on.'},
+ {n:"Merge conflict",on:5,res:'<span class="ok">▸ block</span> “pull/212: merge conflicts with main. Merge main in, resolve, push; never rebase or force-push.” Even when every check is green.'},
+ {n:"Already reported",on:5,stop:5,res:'<span class="dim">▸ silent.</span> That commit and problem is in the seen file. Nothing repeats.'},
+ {n:"All green",on:5,stop:5,res:'<span class="dim">▸ silent.</span> No failed check and no conflict on any of your PRs.'},
  {n:"Hook re-entered",on:2,stop:2,res:'<span class="dim">▸ silent.</span> Claude is already continuing from a stop hook, so the hook steps aside.'},
  {n:"No PR yet",on:4,stop:4,res:'<span class="dim">▸ silent.</span> The worktrees have branches, but none has an open PR of yours.'}
 ];

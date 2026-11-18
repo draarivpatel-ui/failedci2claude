@@ -1,7 +1,7 @@
 {
   "name": "backtogreen",
   "short_name": "backtogreen",
-  "description": "A Claude Code Stop hook. When CI fails on your pull request, the session that opened it is told and fixes it.",
+  "description": "A Claude Code Stop hook. When CI fails or a merge conflict blocks your pull request, the session that opened it is told and fixes it.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#090b0a",

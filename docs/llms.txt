@@ -1,6 +1,6 @@
 # backtogreen
 
-> A Claude Code Stop hook. When CI fails on your pull request, the session that opened it is told and fixes it.
+> A Claude Code Stop hook. When CI fails or a merge conflict blocks your pull request, the session that opened it is told and fixes it.
 
 When a turn ends, the hook lists the branches checked out in the repo's worktrees, makes one `gh pr list --author @me` call, and matches branches to your open PRs. If a check failed, it answers Claude with the failing check names so the session finds the cause, fixes it and pushes. Each (PR, commit, failing set) is reported once.
 
