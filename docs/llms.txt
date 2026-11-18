@@ -1,0 +1,17 @@
+# backtogreen
+
+> A Claude Code Stop hook. When CI fails on your pull request, the session that opened it is told and fixes it.
+
+When a turn ends, the hook lists the branches checked out in the repo's worktrees, makes one `gh pr list --author @me` call, and matches branches to your open PRs. If a check failed, it answers Claude with the failing check names so the session finds the cause, fixes it and pushes. Each (PR, commit, failing set) is reported once.
+
+Needs python3 and the GitHub CLI (`gh auth login`). Open a new Claude Code session after installing.
+
+## Install
+
+    git clone https://github.com/flisk-sh/failedci2claude && cd failedci2claude && ./install.sh
+
+## Links
+
+- [Site](https://backtogreen.flisk.si/)
+- [Source](https://github.com/flisk-sh/failedci2claude): MIT licensed
+- [Flisk](https://flisk.sh/llms.txt)
