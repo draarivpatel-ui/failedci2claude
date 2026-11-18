@@ -30,6 +30,15 @@ h1 .x{color:var(--acc)}
 .btn.p{background:var(--acc);color:#04130a;border-color:var(--acc);font-weight:700}
 .btn.p:hover{background:#9bffc2;box-shadow:0 0 28px rgba(121,242,168,.35)}
 .btn:not(.p):hover{border-color:var(--dim)}
+.btns{align-items:center}
+.agents{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin-left:auto}
+.agents .wl{display:none}
+.agent{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11.5px;padding:6px 10px;white-space:nowrap;border-radius:999px;border:1px solid var(--line);color:var(--fg);background:rgba(14,18,16,.7)}
+.agent svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.agent.on{border-color:var(--acc2);color:var(--acc)}.agent.on svg{fill:var(--acc);stroke:none}
+.agent.soon{color:var(--dim);border-style:dashed}
+.agent i{font-style:normal;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);background:rgba(255,255,255,.06);padding:1px 6px;border-radius:999px}
+@media(max-width:900px){.agents{margin-left:0;width:100%;flex-wrap:wrap}}
 section{padding:90px 0;border-top:1px solid var(--line)}
 .num{font-family:var(--mono);font-size:12px;color:var(--acc);letter-spacing:.14em}
 h2{font-family:var(--mono);font-size:clamp(24px,4vw,40px);line-height:1.12;margin:8px 0 14px;letter-spacing:-.02em}
@@ -69,6 +78,13 @@ h2{font-family:var(--mono);font-size:clamp(24px,4vw,40px);line-height:1.12;margi
 @keyframes march{to{stroke-dashoffset:-12}}
 .bolt{fill:none;stroke:var(--bad);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;animation:brk 1.1s steps(2) infinite}
 .mk{font-family:var(--mono);font-size:9.5px}.mk.broken{fill:var(--bad)}.mk.link{fill:var(--acc)}
+.flow svg{overflow:visible}
+.actor{pointer-events:none}
+.actor.human line{stroke:#ffcc66;stroke-width:2;stroke-linecap:round}
+.actor.human circle{fill:#ffcc66}
+.actor .q{fill:var(--bad);font-family:var(--mono);font-size:11px;font-weight:700}
+.actor.agent line{stroke:var(--acc);stroke-width:1.7;stroke-linecap:round}
+.actor.agent .star{fill:var(--acc);filter:drop-shadow(0 0 5px var(--acc))}
 .port{fill:#0c100e;stroke:#3a4a42;stroke-width:1.5}
 .packet{fill:var(--acc);filter:drop-shadow(0 0 6px var(--acc))}
 .packet.bad{fill:var(--bad);filter:drop-shadow(0 0 6px var(--bad))}
@@ -148,7 +164,14 @@ footer .big{color:var(--fg);font-size:18px;margin-bottom:12px}
   <div class="eyebrow">For Claude Code and GitHub pull requests · MIT</div>
   <h1><span id="scr" aria-label="Your agent hears CI fail.">Your agent hears CI <span class="x">fail.</span></span></h1>
   <p class="lede">You push to a pull request. GitHub’s checks fail. The Claude session that opened it is told which check failed, finds the cause, and fixes it. You are not the messenger.</p>
-  <div class="btns"><a class="btn p" href="#install">Install in two lines</a><a class="btn" href="#how">How it works ↓</a></div>
+  <div class="btns"><a class="btn p" href="#install">Install in two lines</a><a class="btn" href="#how">How it works ↓</a>
+    <div class="agents" aria-label="Works with">
+      <span class="wl">WORKS WITH</span>
+      <span class="agent on" title="Available now"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.2 7.3L22 12l-7.8 2.7L12 22l-2.2-7.3L2 12l7.8-2.7z"/></svg>Claude Code</span>
+      <span class="agent soon" title="Coming soon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="4"/><path d="M8 9.5l3 2.5-3 2.5M13 15h4"/></svg>Codex<i>soon</i></span>
+      <span class="agent soon" title="Coming soon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 7.5-6 1.8L10.5 19z"/></svg>Cursor<i>soon</i></span>
+      <span class="agent soon" title="Coming soon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 6 4 9 10 10-6 1-9 4-10 10-1-6-4-9-10-10 6-1 9-4 10-10z"/></svg>Gemini<i>soon</i></span>
+    </div></div>
   <div class="flows">
     <div class="card flow">
       <div class="cap"><span><i class="tag tbad">BEFORE</i> you are the messenger</span><b id="cap-before">&nbsp;</b></div>
@@ -273,11 +296,11 @@ var ICONS={
  find:[["circle",{cx:11,cy:11,r:6}],["path",{d:"M16 16l5 5"}]],
  done:[["circle",{cx:12,cy:12,r:9}],["path",{d:"M8 12l3 3 5-6"}]]
 };
-function Flow(svg,cap,steps,hot,mark){
+function Flow(svg,cap,steps,hot,mark,kind){
   var f={narrow:null,pos:[],nodes:[],edges:[],pk:null,NW:160,offset:0};
   f.build=function(){
     var NW,NH=64,i,pos=[];f.narrow=innerWidth<640;svg.innerHTML="";f.nodes=[];f.edges=[];
-    if(!f.narrow){NW=104;NH=88;for(i=0;i<8;i++)pos.push({x:4+i*128,y:18});svg.setAttribute("viewBox","0 0 1008 162")}
+    if(!f.narrow){NW=104;NH=88;for(i=0;i<8;i++)pos.push({x:4+i*128,y:32});svg.setAttribute("viewBox","0 0 1008 176")}
     else{NW=150;var cxs=[10,190],ord=[[0,0],[1,0],[1,1],[0,1],[0,2],[1,2],[1,3],[0,3]];for(i=0;i<8;i++)pos.push({x:cxs[ord[i][0]],y:10+ord[i][1]*120});svg.setAttribute("viewBox","-30 0 380 470")}
     f.NW=NW;f.pos=pos;
     var eg=mk(svg,"g");
@@ -291,7 +314,7 @@ function Flow(svg,cap,steps,hot,mark){
       f.edges.push(ep);
       if(mark&&i===mark.edge){
         var mp=ep.getPointAtLength(ep.getTotalLength()/2);f.mid=mp;
-        var lb=mk(svg,"text",{x:mp.x,y:a.y-6,"class":"mk "+mark.kind,"text-anchor":"middle"},eg);lb.textContent=mark.label;
+        var lb=mk(svg,"text",{x:mp.x,y:a.y+NH+14,"class":"mk "+mark.kind,"text-anchor":"middle"},eg);lb.textContent=mark.label;
         if(mark.kind==="broken")mk(svg,"path",{d:"M"+(mp.x-4)+","+(mp.y-9)+" L"+(mp.x+1)+","+(mp.y-1)+" L"+(mp.x-2)+","+(mp.y+1)+" L"+(mp.x+4)+","+(mp.y+9),"class":"bolt"},eg);
       }
       mk(svg,"circle",{cx:p1[0],cy:p1[1],r:4,"class":"port"},eg);mk(svg,"circle",{cx:p2[0],cy:p2[1],r:4,"class":"port"},eg);
@@ -306,19 +329,45 @@ function Flow(svg,cap,steps,hot,mark){
       f.nodes.push(g);
     });
     f.pk=mk(svg,"circle",{r:5,"class":"packet"});f.pk.style.display="none";
+    var ag=mk(svg,"g",{"class":"actor "+kind});f.act={g:ag};
+    if(kind==="human"){
+      f.act.head=mk(svg,"circle",{cx:0,cy:-17,r:3.4},ag);
+      f.act.body=mk(svg,"line",{x1:0,y1:-13.4,x2:0,y2:-6},ag);
+      f.act.aL=mk(svg,"line",{x1:0,y1:-12.4,x2:0,y2:-7},ag);f.act.aR=mk(svg,"line",{x1:0,y1:-12.4,x2:0,y2:-7},ag);
+      f.act.lL=mk(svg,"line",{x1:0,y1:-6,x2:0,y2:0},ag);f.act.lR=mk(svg,"line",{x1:0,y1:-6,x2:0,y2:0},ag);
+      f.act.q=mk(svg,"text",{x:0,y:-23,"text-anchor":"middle","class":"q"},ag);f.act.q.textContent="?";
+    }else{
+      f.act.w1=mk(svg,"line",{x1:-3,y1:-1,x2:-11,y2:-7},ag);f.act.w2=mk(svg,"line",{x1:3,y1:-1,x2:11,y2:-7},ag);
+      mk(svg,"path",{d:"M0,-8 L2.1,-2.1 L8,0 L2.1,2.1 L0,8 L-2.1,2.1 L-8,0 L-2.1,-2.1Z","class":"star"},ag);
+    }
   };
   f.paint=function(now,isStill){
     var moving=!isStill,T=FD*8,t=(((now-ft0-f.offset)%T)+T)%T,st=Math.floor(t/FD)%8,fr=(t%FD)/FD;
     f.nodes.forEach(function(g,i){g.classList.toggle("active",moving&&i===st);g.classList.toggle("seen",moving?i<st:true)});
     f.edges.forEach(function(p,i){p.classList.toggle("on",moving&&i===st&&fr>.4&&!(mark&&mark.kind==="broken"&&i===mark.edge))});
-    f.pk.setAttribute("r",5);f.pk.setAttribute("opacity",1);
-    if(moving&&fr>.4){
-      var p=f.edges[st],prog=(fr-.4)/.6,lim=1,broke=mark&&mark.kind==="broken"&&st===mark.edge;
-      if(broke){lim=.5;if(prog>lim){f.pk.setAttribute("r",5+(prog-lim)*34);f.pk.setAttribute("opacity",Math.max(0,1-(prog-lim)*2.2))}}
-      var q=p.getPointAtLength(p.getTotalLength()*Math.min(prog,lim));
-      f.pk.setAttribute("cx",q.x);f.pk.setAttribute("cy",q.y);f.pk.setAttribute("class","packet"+(st>=hot[0]&&st<=hot[1]?" bad":""));f.pk.style.display="";
+    var ac=f.act;
+    if(!moving){ac.g.style.display="none"}
+    else{
+      ac.g.style.display="";
+      var e=f.edges[st],L=e.getTotalLength(),go=fr>.4,prog=go?(fr-.4)/.6:0;
+      var brk=mark&&mark.kind==="broken"&&st===mark.edge,lim=brk?.5:1,sp=Math.min(prog,lim);
+      var pt=e.getPointAtLength(L*sp),pn=e.getPointAtLength(Math.min(L,L*sp+3)),dir=pn.x>=pt.x?1:-1;
+      var onRow=!f.narrow&&st!==7;
+      if(kind==="human"){
+        var walking=go&&sp<lim,ang=walking?Math.sin(now/105)*.8:0,stuck=brk&&prog>=lim;
+        var y=onRow?f.pos[st].y-3:pt.y+9;
+        function lim2(l,x0,y0,len,an){l.setAttribute("x2",x0+len*Math.sin(an));l.setAttribute("y2",y0+len*Math.cos(an))}
+        lim2(ac.lL,0,-6,6.2,ang);lim2(ac.lR,0,-6,6.2,-ang);lim2(ac.aL,0,-12.4,5.2,-ang);lim2(ac.aR,0,-12.4,5.2,ang);
+        ac.q.setAttribute("opacity",stuck?1:0);
+        ac.g.setAttribute("transform","translate("+pt.x+","+y+") scale("+(1.15*dir)+",1.15)");
+      }else{
+        var th=go?prog*4*Math.PI:(fr/.4)*2*Math.PI,R=go?7:9,base=onRow?f.pos[st].y-14:pt.y-4;
+        var fl=.5+.5*Math.sin(now/55);
+        ac.w1.setAttribute("x2",-4-8*Math.cos(fl*.9));ac.w1.setAttribute("y2",-2-8*Math.sin(fl*.9));
+        ac.w2.setAttribute("x2",4+8*Math.cos(fl*.9));ac.w2.setAttribute("y2",-2-8*Math.sin(fl*.9));
+        ac.g.setAttribute("transform","translate("+(pt.x+R*Math.sin(th))+","+(base-R*(1-Math.cos(th)))+")");
+      }
     }
-    else f.pk.style.display="none";
     cap.textContent=moving?("step "+(st+1)+" / 8 · "+steps[st].t):"paused";
   };
   f.build();return f;
@@ -332,7 +381,7 @@ flows.push(Flow(document.getElementById("svg-before"),document.getElementById("c
  {t:"Paste in chat",s:"by hand",i:"chat",k:"human"},
  {t:"Claude fixes",s:"reads, edits",i:"spark",k:""},
  {t:"You push again",s:"same PR",i:"push",k:""}
-],[1,5],{edge:2,kind:"broken",label:"nobody tells Claude"}));
+],[1,5],{edge:2,kind:"broken",label:"nobody tells Claude"},"human"));
 flows.push(Flow(document.getElementById("svg-after"),document.getElementById("cap-after"),[
  {t:"You push",s:"to your PR",i:"push",k:""},
  {t:"GitHub checks",s:"tests run",i:"checks",k:""},
@@ -342,7 +391,7 @@ flows.push(Flow(document.getElementById("svg-after"),document.getElementById("ca
  {t:"Claude fixes",s:"reads, edits",i:"spark",k:""},
  {t:"Pushes the fix",s:"same PR",i:"push",k:""},
  {t:"Back to green",s:"all ✓",i:"done",k:"good"}
-],[1,4],{edge:2,kind:"link",label:"told automatically"}));
+],[1,4],{edge:2,kind:"link",label:"told automatically"},"agent"));
 flows[1].offset=FD*3; /* the two loops are out of step, so each can be read on its own */
 addEventListener("resize",function(){if((innerWidth<640)!==flows[0].narrow)flows.forEach(function(f){f.build()})});
 (function floop(now){
