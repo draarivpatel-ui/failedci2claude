@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>failedci2claude: your agent hears CI fail</title>
+<title>backtogreen: your agent hears CI fail</title>
 <meta name="description" content="A Claude Code Stop hook. When CI fails on your pull request, the session that opened it is told and fixes it.">
 <meta name="color-scheme" content="dark">
 <style>
@@ -124,7 +124,7 @@ footer .big{color:var(--fg);font-size:18px;margin-bottom:12px}
 <canvas id="rain" aria-hidden="true"></canvas>
 
 <nav><div class="wrap">
-  <span class="brand">failedci2claude</span>
+  <span class="brand">backtogreen</span>
   <a class="hide" href="#problem">The problem</a>
   <a class="hide" href="#how">How it works</a>
   <a class="hide" href="#numbers">Numbers</a>
@@ -187,7 +187,7 @@ footer .big{color:var(--fg);font-size:18px;margin-bottom:12px}
   <h2 class="reveal">Two tools. Different moments.</h2>
   <p class="sub reveal">The hook runs inside your session. The desktop app's Auto-fix watches from outside. Use both.</p>
   <div class="card scroll reveal"><table>
-    <tr><th></th><th>failedci2claude hook</th><th>Desktop app Auto-fix</th></tr>
+    <tr><th></th><th>backtogreen hook</th><th>Desktop app Auto-fix</th></tr>
     <tr><td>Fires when</td><td>A turn ends</td><td>CI fails, even while the session is idle</td></tr>
     <tr><td>Wakes an idle session</td><td>No</td><td>Yes</td></tr>
     <tr><td>Lives in</td><td>Your <code>~/.claude</code>, any editor that runs Claude Code</td><td>The Claude desktop app</td></tr>
@@ -216,7 +216,7 @@ footer .big{color:var(--fg);font-size:18px;margin-bottom:12px}
 
 <footer><div class="wrap">
   <div class="big">The best CI failure is the one you did not have to forward.</div>
-  <a href="https://github.com/flisk-sh/failedci2claude">GitHub</a> · MIT licensed · works with Claude Code
+  <a href="https://github.com/flisk-sh/failedci2claude">GitHub: failedci2claude</a> · MIT licensed · works with Claude Code
 </div></footer>
 
 <button id="pause" aria-pressed="false">❚❚ Pause motion</button>

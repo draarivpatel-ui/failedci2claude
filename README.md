@@ -1,5 +1,7 @@
 # failedci2claude
 
+> Site name: **backtogreen**. The repository keeps the literal name; the landing page is branded backtogreen.
+
 A Claude Code **Stop hook** that tells your session when CI failed on one of your open pull requests, so the session
 that opened the PR is the one that fixes it.
 
