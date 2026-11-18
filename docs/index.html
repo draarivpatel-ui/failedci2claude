@@ -271,7 +271,7 @@ function Flow(svg,cap,steps,hot){
       mk(svg,"rect",{width:NW,height:NH,rx:12},g);
       mk(svg,"text",{x:14,y:27,"class":"t"},g).textContent=s.t;
       mk(svg,"text",{x:14,y:46,"class":"s"},g).textContent=s.s;
-      mk(svg,"text",{x:NW-12,y:20,"class":"s","text-anchor":"end"},g).textContent="0"+(j+1);
+      if(NW>=160)mk(svg,"text",{x:NW-12,y:20,"class":"s","text-anchor":"end"},g).textContent="0"+(j+1);
       f.nodes.push(g);
     });
     f.pk=mk(svg,"circle",{r:5,"class":"packet"});f.pk.style.display="none";
@@ -292,7 +292,7 @@ flows.push(Flow(document.getElementById("svg-before"),document.getElementById("c
  {t:"Check fails",s:"Test ✗",k:"bad"},
  {t:"You notice",s:"minutes later",k:"human"},
  {t:"Copy the log",s:"open Actions",k:"human"},
- {t:"Paste to Claude",s:"you retype it",k:"human"},
+ {t:"Paste in chat",s:"you retype it",k:"human"},
  {t:"Claude fixes",s:"reads log, fixes",k:""},
  {t:"git push",s:"the fix, same PR",k:""}
 ],[1,5]));
