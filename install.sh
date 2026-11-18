@@ -16,6 +16,16 @@ else
 fi
 chmod +x "$DIR/failedci2claude.py"
 
+# The companion skill, so a session also knows how to fix a red check. User-level, so it works in every repo.
+SKILL_DIR="$HOME/.claude/skills/backtogreen"
+SKILL_SRC="$(cd "$(dirname "$0")" 2>/dev/null && pwd)/skills/backtogreen/SKILL.md"
+mkdir -p "$SKILL_DIR"
+if [ -f "$SKILL_SRC" ]; then
+  cp "$SKILL_SRC" "$SKILL_DIR/SKILL.md"
+else
+  curl -fsSL "${FAILEDCI_RAW_SKILL:-https://raw.githubusercontent.com/flisk-sh/failedci2claude/main/skills/backtogreen/SKILL.md}" -o "$SKILL_DIR/SKILL.md"
+fi
+
 python3 - "$SETTINGS" <<'PY'
 import json, os, shutil, sys
 path = sys.argv[1]
@@ -37,4 +47,4 @@ else:
 PY
 
 command -v gh >/dev/null 2>&1 || echo "note: gh not found on PATH; install it and run 'gh auth login'" >&2
-echo "failedci2claude installed. Start a new Claude Code session: hooks load at session start."
+echo "failedci2claude installed (hook + backtogreen skill). Start a new Claude Code session: hooks load at session start."

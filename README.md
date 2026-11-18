@@ -14,6 +14,11 @@ git clone https://github.com/flisk-sh/failedci2claude && cd failedci2claude && .
 Needs `python3` and the GitHub CLI (`gh auth login`). Hooks load when a session starts, so open a **new** Claude Code
 session afterwards.
 
+The installer also adds a small skill, `backtogreen`, to `~/.claude/skills`. It teaches a session how to fix a red check
+on its own pull request: read the failing job, tell whose failure it is (this PR, the base branch, or a transient GitHub
+error), fix it in the PR's worktree and push. The skill lives in [`skills/backtogreen`](skills/backtogreen/SKILL.md), so
+you can also copy it into any project's `.claude/skills` yourself.
+
 ## How it works
 
 When a turn ends, the hook:
