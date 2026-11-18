@@ -90,7 +90,7 @@ h2{font-family:var(--mono);font-size:clamp(24px,4vw,40px);line-height:1.12;margi
 .node text.t{fill:var(--fg);font-family:var(--mono);font-size:14px;font-weight:700}
 .node text.s{fill:var(--dim);font-family:var(--mono);font-size:10.5px}
 .node.active text.t{fill:#fff}
-.node text.t.w{font-size:11px}.node text.t.n{font-size:11px}.node text.s.w{font-size:9.5px}
+.node text.t.w{font-size:14px}.node text.t.n{font-size:11px}.node text.s.w{font-size:11px}
 .node .ic{fill:none;stroke:#7d8b83;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:stroke .25s}
 .node.seen .ic{stroke:#4fae7c}.node.active .ic{stroke:var(--acc)}
 .node.bad .ic,.node.bad.seen .ic{stroke:var(--bad)}.node.human .ic,.node.human.seen .ic{stroke:#e0b455}
@@ -198,11 +198,11 @@ footer .big{color:var(--fg);font-size:18px;margin-bottom:12px}
   <div class="flows">
     <div class="card flow">
       <div class="cap"><span><i class="tag tbad">BEFORE</i> you are the messenger</span><b id="cap-before">&nbsp;</b></div>
-      <svg id="svg-before" role="img" aria-label="Before: a check fails or a conflict blocks it, you notice minutes later, copy the log, paste it into Claude, Claude fixes it and pushes."></svg>
+      <svg id="svg-before" role="img" aria-label="Before: you push, the pull request goes red from a failed check or a conflict, you tell Claude by hand, copying the error and pasting it in, Claude fixes it and you push again."></svg>
     </div>
     <div class="card flow">
       <div class="cap"><span><i class="tag tok">AFTER</i> the session is told</span><b id="cap-after">&nbsp;</b></div>
-      <svg id="svg-after" role="img" aria-label="After: a check fails or a conflict blocks it, the Stop hook wakes at the end of the turn, one gh call finds the failure, Claude fixes it, pushes, and CI turns green."></svg>
+      <svg id="svg-after" role="img" aria-label="After: you push, the pull request goes red, Claude is told automatically when its turn ends, then Claude fixes it and the pull request is back to green."></svg>
     </div>
   </div>
 </div></header>
@@ -306,7 +306,7 @@ var last=0;(function loop(t){requestAnimationFrame(loop);if(!still&&t-last>50){d
 if(reduce){for(var k=0;k<90;k++)draw()}
 
 /* hero flows: two n8n-style node graphs, looping (before: by hand, after: the hook) */
-var NS="http://www.w3.org/2000/svg",FD=1300,ft0=performance.now(),flows=[];
+var NS="http://www.w3.org/2000/svg",FD=1500,ft0=performance.now(),flows=[];
 function mk(svg,n,a,p){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e}
 var ICONS={
  push:[["path",{d:"M12 16V4M7 9l5-5 5 5M4 20h16"}]],
@@ -321,17 +321,16 @@ var ICONS={
  done:[["circle",{cx:12,cy:12,r:9}],["path",{d:"M8 12l3 3 5-6"}]]
 };
 function Flow(svg,cap,steps,hot,mark,kind){
-  var f={narrow:null,pos:[],nodes:[],edges:[],pk:null,NW:160,offset:0};
+  var N=steps.length,f={narrow:null,pos:[],nodes:[],edges:[],pk:null,NW:160,offset:0};
   f.build=function(){
     var NW,NH=64,i,pos=[];f.narrow=innerWidth<640;svg.innerHTML="";f.nodes=[];f.edges=[];
-    if(!f.narrow){NW=104;NH=88;for(i=0;i<8;i++)pos.push({x:4+i*128,y:32});svg.setAttribute("viewBox","0 0 1008 176")}
-    else{NW=150;var cxs=[10,190],ord=[[0,0],[1,0],[1,1],[0,1],[0,2],[1,2],[1,3],[0,3]];for(i=0;i<8;i++)pos.push({x:cxs[ord[i][0]],y:10+ord[i][1]*120});svg.setAttribute("viewBox","-30 0 380 470")}
+    if(!f.narrow){NW=216;NH=88;var gap=(1000-N*NW)/(N-1);for(i=0;i<N;i++)pos.push({x:4+i*(NW+gap),y:32});svg.setAttribute("viewBox","0 0 1008 176")}
+    else{NW=150;var cxs=[10,190],ord=[[0,0],[1,0],[1,1],[0,1]];for(i=0;i<N;i++)pos.push({x:cxs[ord[i][0]],y:10+ord[i][1]*120});svg.setAttribute("viewBox","-30 0 380 215")}
     f.NW=NW;f.pos=pos;
     var eg=mk(svg,"g");
-    for(i=0;i<8;i++){
-      var a=pos[i],b=pos[(i+1)%8],d,p1,p2;
-      if(!f.narrow&&i===7){p1=[a.x+NW/2,a.y+NH];p2=[b.x+NW/2,b.y+NH];d="M"+p1+" C"+p1[0]+","+(a.y+NH+44)+" "+p2[0]+","+(a.y+NH+44)+" "+p2}
-      else if(f.narrow&&i===7){p1=[a.x,a.y+NH/2];p2=[b.x,b.y+NH/2];d="M"+p1+" C-26,"+p1[1]+" -26,"+p2[1]+" "+p2}
+    for(i=0;i<N;i++){
+      var a=pos[i],b=pos[(i+1)%N],d,p1,p2;
+      if(!f.narrow&&i===N-1){p1=[a.x+NW/2,a.y+NH];p2=[b.x+NW/2,b.y+NH];d="M"+p1+" C"+p1[0]+","+(a.y+NH+44)+" "+p2[0]+","+(a.y+NH+44)+" "+p2}
       else if(a.y===b.y){var r=b.x>a.x;p1=[a.x+(r?NW:0),a.y+NH/2];p2=[b.x+(r?0:NW),b.y+NH/2];var m=(p1[0]+p2[0])/2;d="M"+p1+" C"+m+","+p1[1]+" "+m+","+p2[1]+" "+p2}
       else{var dn=b.y>a.y;p1=[a.x+NW/2,a.y+(dn?NH:0)];p2=[b.x+NW/2,b.y+(dn?0:NH)];var my=(p1[1]+p2[1])/2;d="M"+p1+" C"+p1[0]+","+my+" "+p2[0]+","+my+" "+p2}
       var ep=mk(svg,"path",{d:d,"class":"edge"+(i>=hot[0]&&i<=hot[1]?" bad":"")+(mark&&i===mark.edge?" "+mark.kind:"")},eg);
@@ -346,10 +345,10 @@ function Flow(svg,cap,steps,hot,mark,kind){
     steps.forEach(function(s,j){
       var p=pos[j],g=mk(svg,"g",{"class":"node"+(s.k?" "+s.k:""),transform:"translate("+p.x+","+p.y+")"}),wide=!f.narrow;
       mk(svg,"rect",{width:NW,height:NH,rx:11},g);
-      var ic=mk(svg,"g",{"class":"ic",transform:wide?"translate("+(NW/2-14)+",13) scale(1.17)":"translate(12,"+(NH/2-14)+") scale(1.17)"},g);
+      var ic=mk(svg,"g",{"class":"ic",transform:wide?"translate("+(NW/2-17)+",9) scale(1.42)":"translate(12,"+(NH/2-14)+") scale(1.17)"},g);
       ICONS[s.i].forEach(function(e){mk(svg,e[0],e[1],ic)});
-      mk(svg,"text",{x:wide?NW/2:50,y:wide?62:NH/2-3,"class":"t"+(wide?" w":" n"),"text-anchor":wide?"middle":"start"},g).textContent=s.t;
-      mk(svg,"text",{x:wide?NW/2:50,y:wide?78:NH/2+14,"class":"s"+(wide?" w":""),"text-anchor":wide?"middle":"start"},g).textContent=s.s;
+      mk(svg,"text",{x:wide?NW/2:50,y:wide?62:NH/2-3,"class":"t"+(wide?" w":" n"),"text-anchor":wide?"middle":"start"},g).textContent=(!wide&&s.tn)?s.tn:s.t;
+      mk(svg,"text",{x:wide?NW/2:50,y:wide?78:NH/2+14,"class":"s"+(wide?" w":""),"text-anchor":wide?"middle":"start"},g).textContent=(!wide&&s.sn)?s.sn:s.s;
       f.nodes.push(g);
     });
     f.pk=mk(svg,"circle",{r:5,"class":"packet"});f.pk.style.display="none";
@@ -366,7 +365,7 @@ function Flow(svg,cap,steps,hot,mark,kind){
     }
   };
   f.paint=function(now,isStill){
-    var moving=!isStill,T=FD*8,t=(((now-ft0-f.offset)%T)+T)%T,st=Math.floor(t/FD)%8,fr=(t%FD)/FD;
+    var moving=!isStill,T=FD*N,t=(((now-ft0-f.offset)%T)+T)%T,st=Math.floor(t/FD)%N,fr=(t%FD)/FD;
     f.nodes.forEach(function(g,i){g.classList.toggle("active",moving&&i===st);g.classList.toggle("seen",moving?i<st:true)});
     f.edges.forEach(function(p,i){p.classList.toggle("on",moving&&i===st&&fr>.4&&!(mark&&mark.kind==="broken"&&i===mark.edge))});
     var ac=f.act;
@@ -376,7 +375,7 @@ function Flow(svg,cap,steps,hot,mark,kind){
       var e=f.edges[st],L=e.getTotalLength(),go=fr>.4,prog=go?(fr-.4)/.6:0;
       var brk=mark&&mark.kind==="broken"&&st===mark.edge,lim=brk?.5:1,sp=Math.min(prog,lim);
       var pt=e.getPointAtLength(L*sp),pn=e.getPointAtLength(Math.min(L,L*sp+3)),dir=pn.x>=pt.x?1:-1;
-      var onRow=!f.narrow&&st!==7;
+      var onRow=!f.narrow&&st!==N-1;
       if(kind==="human"){
         var walking=go&&sp<lim,ang=walking?Math.sin(now/105)*.8:0,stuck=brk&&prog>=lim;
         var y=onRow?f.pos[st].y-3:pt.y+9;
@@ -392,31 +391,23 @@ function Flow(svg,cap,steps,hot,mark,kind){
         ac.g.setAttribute("transform","translate("+(pt.x+R*Math.sin(th))+","+(base-R*(1-Math.cos(th)))+")");
       }
     }
-    cap.textContent=moving?("step "+(st+1)+" / 8 · "+steps[st].t):"paused";
+    cap.textContent=moving?("step "+(st+1)+" / "+N+" · "+steps[st].t):"paused";
   };
   f.build();return f;
 }
 flows.push(Flow(document.getElementById("svg-before"),document.getElementById("cap-before"),[
  {t:"You push",s:"to your PR",i:"push",k:""},
- {t:"GitHub checks",s:"tests run",i:"checks",k:""},
- {t:"PR goes red",s:"fail or conflict",i:"fail",k:"bad"},
- {t:"You spot it",s:"minutes later",i:"eye",k:"human"},
- {t:"Copy the error",s:"from GitHub",i:"clip",k:"human"},
- {t:"Paste in chat",s:"by hand",i:"chat",k:"human"},
- {t:"Claude fixes",s:"reads, edits",i:"spark",k:""},
- {t:"You push again",s:"same PR",i:"push",k:""}
-],[1,5],{edge:2,kind:"broken",label:"nobody tells Claude"},"human"));
+ {t:"PR goes red",s:"fail or conflict",sn:"fail, conflict",i:"fail",k:"bad"},
+ {t:"You tell Claude",s:"copy the error, paste it",tn:"Tell Claude",sn:"copy and paste",i:"clip",k:"human"},
+ {t:"Claude fixes",s:"then you push again",sn:"you push again",i:"spark",k:""}
+],[1,2],{edge:1,kind:"broken",label:"nobody tells Claude"},"human"));
 flows.push(Flow(document.getElementById("svg-after"),document.getElementById("cap-after"),[
  {t:"You push",s:"to your PR",i:"push",k:""},
- {t:"GitHub checks",s:"tests run",i:"checks",k:""},
- {t:"PR goes red",s:"fail or conflict",i:"fail",k:"bad"},
- {t:"Claude is told",s:"turn ends",i:"bell",k:""},
- {t:"Finds your PR",s:"one lookup",i:"find",k:""},
- {t:"Claude fixes",s:"reads, edits",i:"spark",k:""},
- {t:"Pushes the fix",s:"same PR",i:"push",k:""},
- {t:"Back to green",s:"all ✓",i:"done",k:"good"}
-],[1,4],{edge:2,kind:"link",label:"told automatically"},"agent"));
-flows[1].offset=FD*3; /* the two loops are out of step, so each can be read on its own */
+ {t:"PR goes red",s:"fail or conflict",sn:"fail, conflict",i:"fail",k:"bad"},
+ {t:"Claude is told",s:"when its turn ends",sn:"turn ends",i:"bell",k:""},
+ {t:"Back to green",s:"Claude fixes and pushes",sn:"fixes, pushes",i:"done",k:"good"}
+],[1,1],{edge:1,kind:"link",label:"told automatically"},"agent"));
+flows[1].offset=FD*2; /* the two loops are out of step, so each can be read on its own */
 addEventListener("resize",function(){if((innerWidth<640)!==flows[0].narrow)flows.forEach(function(f){f.build()})});
 (function floop(now){
   requestAnimationFrame(floop);
