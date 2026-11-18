@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>failedci2claude: your agent hears CI fail</title>
+<meta name="description" content="A Claude Code Stop hook. When CI fails on your pull request, the session that opened it is told and fixes it.">
+<meta name="color-scheme" content="dark">
+<style>
+:root{--bg:#090b0a;--fg:#e8efe9;--dim:#8a968d;--line:#1d2420;--acc:#79f2a8;--acc2:#3fd17f;--bad:#ff6b6b;--card:#0e1210;--mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+#rain{position:fixed;inset:0;width:100%;height:100%;z-index:0;opacity:.5;pointer-events:none}
+main,nav,footer{position:relative;z-index:1}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+nav{position:sticky;top:0;z-index:5;background:rgba(9,11,10,.78);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:20px;height:52px;font-family:var(--mono);font-size:13px}
+nav .brand{font-weight:700;color:var(--acc);letter-spacing:.02em;margin-right:auto}
+nav a{text-decoration:none;color:var(--dim)}nav a:hover{color:var(--fg)}
+nav .gh{border:1px solid var(--line);padding:5px 10px;border-radius:7px;color:var(--fg)}
+@media(max-width:700px){nav .hide{display:none}}
+.hero{padding:70px 0 60px}
+.eyebrow{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.12em;text-transform:uppercase}
+h1{font-family:var(--mono);font-size:clamp(36px,7.2vw,80px);line-height:1.02;margin:14px 0 18px;letter-spacing:-.03em;overflow-wrap:anywhere}
+h1 .x{color:var(--acc)}
+.lede{font-size:clamp(16px,2vw,20px);color:#c4cfc7;max-width:640px;margin:0 0 28px}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn{font-family:var(--mono);font-size:14px;padding:11px 18px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer;text-decoration:none;transition:.2s}
+.btn.p{background:var(--acc);color:#04130a;border-color:var(--acc);font-weight:700}
+.btn.p:hover{background:#9bffc2;box-shadow:0 0 28px rgba(121,242,168,.35)}
+.btn:not(.p):hover{border-color:var(--dim)}
+section{padding:90px 0;border-top:1px solid var(--line)}
+.num{font-family:var(--mono);font-size:12px;color:var(--acc);letter-spacing:.14em}
+h2{font-family:var(--mono);font-size:clamp(24px,4vw,40px);line-height:1.12;margin:8px 0 14px;letter-spacing:-.02em}
+.sub{color:#b3bfb7;max-width:660px;margin:0 0 30px}
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px}
+/* hero flows: n8n-style node graphs */
+.flows{display:grid;gap:16px;margin-top:46px}
+.flow{padding:16px 18px 12px;background:rgba(14,18,16,.82);backdrop-filter:blur(4px)}
+.flow .cap{display:flex;justify-content:space-between;gap:12px;font-family:var(--mono);font-size:12px;color:var(--dim);margin-bottom:8px}
+.tag{font-style:normal;font-size:10.5px;letter-spacing:.12em;padding:3px 8px;border-radius:999px;margin-right:8px}
+.tbad{background:rgba(255,107,107,.14);color:var(--bad)}.tok{background:rgba(121,242,168,.14);color:var(--acc)}
+.flow .cap b{color:var(--acc);font-weight:500;white-space:nowrap}
+.flow svg{width:100%;height:auto;display:block}
+.edge{fill:none;stroke:#26312b;stroke-width:2;transition:stroke .3s}
+.edge.on{stroke:var(--acc2)}
+.edge.bad.on{stroke:var(--bad)}
+.node rect{fill:#0c100e;stroke:#26312b;stroke-width:1.5;transition:stroke .25s,filter .25s}
+.node.seen rect{stroke:#2c5a40}
+.node.active rect{stroke:var(--acc);filter:drop-shadow(0 0 10px rgba(121,242,168,.45))}
+.node.bad.active rect{stroke:var(--bad);filter:drop-shadow(0 0 10px rgba(255,107,107,.5))}
+.node.bad.seen rect{stroke:#6b2f2f}
+.node.human rect{stroke:#4a3d1f}.node.human.seen rect{stroke:#6b5a2c}
+.node.human.active rect{stroke:#ffcc66;filter:drop-shadow(0 0 10px rgba(255,204,102,.45))}
+.node text.t{fill:var(--fg);font-family:var(--mono);font-size:14px;font-weight:700}
+.node text.s{fill:var(--dim);font-family:var(--mono);font-size:10.5px}
+.node.active text.t{fill:#fff}
+.port{fill:#0c100e;stroke:#3a4a42;stroke-width:1.5}
+.packet{fill:var(--acc);filter:drop-shadow(0 0 6px var(--acc))}
+.packet.bad{fill:var(--bad);filter:drop-shadow(0 0 6px var(--bad))}
+/* terminal */
+.term{padding:0;overflow:hidden}
+.term .bar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:12px;color:var(--dim)}
+.dot{width:10px;height:10px;border-radius:50%;background:#2a332e}
+.term .re{margin-left:auto;cursor:pointer;background:none;border:0;color:var(--dim);font:inherit}.term .re:hover{color:var(--fg)}
+.term pre{margin:0;padding:18px;min-height:250px;font-family:var(--mono);font-size:13.5px;line-height:1.7;white-space:pre-wrap;overflow-x:auto}
+.ok{color:var(--acc)}.bad{color:var(--bad)}.dim{color:var(--dim)}
+.caret{display:inline-block;width:8px;height:15px;background:var(--acc);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+/* ladder */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tab{font-family:var(--mono);font-size:13px;padding:8px 13px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--dim);cursor:pointer}
+.tab[aria-selected=true]{color:#04130a;background:var(--acc);border-color:var(--acc);font-weight:700}
+.ladder{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.rung{display:grid;grid-template-columns:44px 1fr auto;gap:14px;align-items:center;padding:13px 16px;border:1px solid var(--line);border-radius:11px;background:var(--card);transition:.35s;opacity:.42}
+.rung b{font-family:var(--mono);color:var(--dim)}
+.rung .r{font-family:var(--mono);font-size:12px;color:var(--dim)}
+.rung.on{opacity:1;border-color:var(--acc2);box-shadow:0 0 0 1px rgba(63,209,127,.15),0 10px 30px rgba(63,209,127,.06)}
+.rung.on b{color:var(--acc)}
+.rung.stop{border-color:var(--acc)}
+.result{margin-top:16px;padding:14px 16px;border-left:3px solid var(--acc);background:var(--card);border-radius:0 10px 10px 0;font-family:var(--mono);font-size:13.5px;min-height:48px}
+/* numbers */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{padding:22px}
+.stat .n{font-family:var(--mono);font-size:clamp(34px,5vw,52px);font-weight:700;color:var(--acc);letter-spacing:-.03em}
+.stat .l{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--dim);margin-top:4px}
+.stat p{margin:8px 0 0;font-size:14px;color:#aab6ae}
+/* compare */
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th,td{text-align:left;padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--dim);font-weight:500}
+td:first-child{font-family:var(--mono);color:var(--dim);white-space:nowrap}
+.scroll{overflow-x:auto}
+/* install */
+.code{position:relative;margin-top:12px}
+.code pre{margin:0;padding:18px 90px 18px 18px;font-family:var(--mono);font-size:13.5px;overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.copy{position:absolute;top:10px;right:10px;font-family:var(--mono);font-size:12px;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.copy:hover{border-color:var(--acc)}
+.cmds{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;margin-top:26px;font-family:var(--mono);font-size:13.5px}
+.cmds code{color:var(--acc)}.cmds span{color:var(--dim)}
+footer{padding:50px 0 70px;border-top:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:13px}
+footer .big{color:var(--fg);font-size:18px;margin-bottom:12px}
+#pause{position:fixed;right:16px;bottom:16px;z-index:9;font-family:var(--mono);font-size:12px;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(14,18,16,.9);color:var(--dim);cursor:pointer}
+#pause:hover{color:var(--fg)}
+@media(max-width:640px){
+  .hero{padding:44px 0 40px}
+  .flow{padding:12px 10px}
+  .flow .cap{flex-direction:column;gap:4px}
+  .rung{grid-template-columns:34px 1fr}.rung .r{grid-column:2}
+  .term .bar{flex-wrap:wrap}.term .re{margin-left:0}
+  .stats{gap:10px}.stat{padding:16px}
+  .cmds{grid-template-columns:1fr}
+}
+.still *{animation:none!important;transition:none!important}
+:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+</style>
+</head>
+<body>
+<canvas id="rain" aria-hidden="true"></canvas>
+
+<nav><div class="wrap">
+  <span class="brand">failedci2claude</span>
+  <a class="hide" href="#problem">The problem</a>
+  <a class="hide" href="#how">How it works</a>
+  <a class="hide" href="#numbers">Numbers</a>
+  <a class="hide" href="#compare">Hook vs Auto-fix</a>
+  <a href="#install">Install</a>
+  <a class="gh" href="https://github.com/OWNER/failedci2claude">GitHub</a>
+</div></nav>
+
+<main>
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">A Claude Code Stop hook · MIT</div>
+  <h1><span id="scr" aria-label="Your agent hears CI fail.">Your agent hears CI <span class="x">fail.</span></span></h1>
+  <p class="lede">You push. CI goes red. The session that opened the pull request is told which checks failed, finds the cause, and fixes it. You are not the messenger.</p>
+  <div class="btns"><a class="btn p" href="#install">Install in two lines</a><a class="btn" href="#how">How it works ↓</a></div>
+  <div class="flows">
+    <div class="card flow">
+      <div class="cap"><span><i class="tag tbad">BEFORE</i> you are the messenger</span><b id="cap-before">&nbsp;</b></div>
+      <svg id="svg-before" role="img" aria-label="Before: CI fails, you notice minutes later, copy the log, paste it into Claude, Claude fixes it and pushes."></svg>
+    </div>
+    <div class="card flow">
+      <div class="cap"><span><i class="tag tok">AFTER</i> the session is told</span><b id="cap-after">&nbsp;</b></div>
+      <svg id="svg-after" role="img" aria-label="After: CI fails, the Stop hook wakes at the end of the turn, one gh call finds the failure, Claude fixes it, pushes, and CI turns green."></svg>
+    </div>
+  </div>
+</div></header>
+
+<section id="problem"><div class="wrap">
+  <div class="num reveal">01 · THE PROBLEM</div>
+  <h2 class="reveal">CI fails after the agent stopped looking.</h2>
+  <p class="sub reveal">A pull request goes red minutes after the turn ends. Nobody tells the session, so you copy the error across by hand. This is the same push, with the hook on.</p>
+  <div class="card term reveal">
+    <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span>claude · session (illustrative example)</span><button class="re" id="replay" aria-label="Replay the demo">↻ replay</button></div>
+    <pre id="tty" aria-live="off"></pre>
+  </div>
+</div></section>
+
+<section id="how"><div class="wrap">
+  <div class="num reveal">02 · HOW IT WORKS</div>
+  <h2 class="reveal">Five steps. It stops at the first one that says nothing to do.</h2>
+  <p class="sub reveal">When a turn ends, the hook climbs this ladder. Pick a situation:</p>
+  <div class="tabs reveal" role="tablist" id="tabs"></div>
+  <ol class="ladder reveal" id="ladder"></ol>
+  <div class="result reveal" id="result" role="status"></div>
+</div></section>
+
+<section id="numbers"><div class="wrap">
+  <div class="num reveal">03 · BY THE NUMBERS</div>
+  <h2 class="reveal">Small on purpose.</h2>
+  <p class="sub reveal">Each figure is a property of the code in this repository, not a benchmark.</p>
+  <div class="stats">
+    <div class="card stat reveal"><div class="n" data-to="1">0</div><div class="l">GH CALLS PER RUN</div><p>One <code>gh pr list</code> for all your open PRs, not one per branch.</p></div>
+    <div class="card stat reveal"><div class="n" data-to="7">0</div><div class="l">TESTS</div><p>Real script, real temp git repo, a stub <code>gh</code>. No network.</p></div>
+    <div class="card stat reveal"><div class="n" data-to="0">9</div><div class="l">REPEAT REPORTS</div><p>A failure is reported once per commit, so the hook cannot loop.</p></div>
+    <div class="card stat reveal"><div class="n" data-to="30">0</div><div class="l">SECOND BUDGET</div><p>The hook timeout. A normal run takes about one second.</p></div>
+  </div>
+</div></section>
+
+<section id="compare"><div class="wrap">
+  <div class="num reveal">04 · HOOK VS AUTO-FIX</div>
+  <h2 class="reveal">Two tools. Different moments.</h2>
+  <p class="sub reveal">The hook runs inside your session. The desktop app's Auto-fix watches from outside. Use both.</p>
+  <div class="card scroll reveal"><table>
+    <tr><th></th><th>failedci2claude hook</th><th>Desktop app Auto-fix</th></tr>
+    <tr><td>Fires when</td><td>A turn ends</td><td>CI fails, even while the session is idle</td></tr>
+    <tr><td>Wakes an idle session</td><td>No</td><td>Yes</td></tr>
+    <tr><td>Lives in</td><td>Your <code>~/.claude</code>, any editor that runs Claude Code</td><td>The Claude desktop app</td></tr>
+    <tr><td>Setup</td><td>One installer</td><td>A switch per pull request</td></tr>
+    <tr><td>Good for</td><td>Catching red CI the moment you come back</td><td>Fixing it while you are away</td></tr>
+  </table></div>
+</div></section>
+
+<section id="install"><div class="wrap">
+  <div class="num reveal">05 · INSTALL</div>
+  <h2 class="reveal">Two lines. Then it is on.</h2>
+  <p class="sub reveal">Needs <code>python3</code> and the GitHub CLI signed in (<code>gh auth login</code>). Hooks load when a session starts, so open a new one afterwards.</p>
+  <div class="tabs reveal" id="itabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-i="0">Install</button>
+    <button class="tab" role="tab" aria-selected="false" data-i="1">Verify</button>
+    <button class="tab" role="tab" aria-selected="false" data-i="2">Uninstall</button>
+  </div>
+  <div class="code reveal"><pre id="icode"></pre><button class="copy" id="copy">copy</button></div>
+  <div class="cmds reveal">
+    <code>~/.claude/hooks/failedci2claude.log</code><span>one line per run: tells a silent hook from one that never ran</span>
+    <code>~/.claude/hooks/failedci2claude.seen.json</code><span>what was already reported, so nothing repeats</span>
+    <code>pytest tests</code><span>the seven tests, run from the repository</span>
+  </div>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  <div class="big">The best CI failure is the one you did not have to forward.</div>
+  <a href="https://github.com/OWNER/failedci2claude">GitHub</a> · MIT licensed · works with Claude Code
+</div></footer>
+
+<button id="pause" aria-pressed="false">❚❚ Pause motion</button>
+
+<script>
+(function(){
+var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+var still = reduce;
+function setStill(v){still=v;document.body.classList.toggle("still",v);var b=document.getElementById("pause");b.textContent=v?"▶ Play motion":"❚❚ Pause motion";b.setAttribute("aria-pressed",v)}
+document.getElementById("pause").onclick=function(){setStill(!still)};
+if(reduce)setStill(true);
+
+/* code rain */
+var cv=document.getElementById("rain"),cx=cv.getContext("2d"),cols=[],fs=15,W,H;
+var glyphs="01{}[]<>/=+*#$%CIPASSFAILok✗✓".split("");
+function size(){W=cv.width=innerWidth;H=cv.height=innerHeight;cols=[];for(var i=0;i<Math.ceil(W/fs);i++)cols.push(Math.random()*H/fs)}
+addEventListener("resize",size);size();
+function draw(){
+  cx.fillStyle="rgba(9,11,10,.16)";cx.fillRect(0,0,W,H);
+  cx.font=fs+"px "+getComputedStyle(document.body).getPropertyValue("--mono");
+  for(var i=0;i<cols.length;i++){
+    var g=glyphs[Math.random()*glyphs.length|0];
+    cx.fillStyle=Math.random()<.02?"#ff6b6b":"#2f8f59";
+    cx.fillText(g,i*fs,cols[i]*fs);
+    if(cols[i]*fs>H&&Math.random()>.975)cols[i]=0;
+    cols[i]+=.5;
+  }
+}
+var last=0;(function loop(t){requestAnimationFrame(loop);if(!still&&t-last>50){draw();last=t}})(0);
+if(reduce){for(var k=0;k<90;k++)draw()}
+
+/* hero flows: two n8n-style node graphs, looping (before: by hand, after: the hook) */
+var NS="http://www.w3.org/2000/svg",FD=1300,ft0=performance.now(),flows=[];
+function mk(svg,n,a,p){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e}
+function Flow(svg,cap,steps,hot){
+  var f={narrow:null,pos:[],nodes:[],edges:[],pk:null,NW:160,offset:0};
+  f.build=function(){
+    var NW,NH=64,i,pos=[];f.narrow=innerWidth<640;svg.innerHTML="";f.nodes=[];f.edges=[];
+    if(!f.narrow){NW=160;var xs=[10,210,410,610];for(i=0;i<8;i++)pos.push(i<4?{x:xs[i],y:30}:{x:xs[7-i],y:210});svg.setAttribute("viewBox","0 0 780 310")}
+    else{NW=140;var cxs=[10,190],ord=[[0,0],[1,0],[1,1],[0,1],[0,2],[1,2],[1,3],[0,3]];for(i=0;i<8;i++)pos.push({x:cxs[ord[i][0]],y:10+ord[i][1]*120});svg.setAttribute("viewBox","-30 0 380 470")}
+    f.NW=NW;f.pos=pos;
+    var eg=mk(svg,"g");
+    for(i=0;i<8;i++){
+      var a=pos[i],b=pos[(i+1)%8],d,p1,p2;
+      if(f.narrow&&i===7){p1=[a.x,a.y+NH/2];p2=[b.x,b.y+NH/2];d="M"+p1+" C-26,"+p1[1]+" -26,"+p2[1]+" "+p2}
+      else if(a.y===b.y){var r=b.x>a.x;p1=[a.x+(r?NW:0),a.y+NH/2];p2=[b.x+(r?0:NW),b.y+NH/2];var m=(p1[0]+p2[0])/2;d="M"+p1+" C"+m+","+p1[1]+" "+m+","+p2[1]+" "+p2}
+      else{var dn=b.y>a.y;p1=[a.x+NW/2,a.y+(dn?NH:0)];p2=[b.x+NW/2,b.y+(dn?0:NH)];var my=(p1[1]+p2[1])/2;d="M"+p1+" C"+p1[0]+","+my+" "+p2[0]+","+my+" "+p2}
+      f.edges.push(mk(svg,"path",{d:d,"class":"edge"+(i>=hot[0]&&i<=hot[1]?" bad":"")},eg));
+      mk(svg,"circle",{cx:p1[0],cy:p1[1],r:4,"class":"port"},eg);mk(svg,"circle",{cx:p2[0],cy:p2[1],r:4,"class":"port"},eg);
+    }
+    steps.forEach(function(s,j){
+      var p=pos[j],g=mk(svg,"g",{"class":"node"+(s.k?" "+s.k:""),transform:"translate("+p.x+","+p.y+")"});
+      mk(svg,"rect",{width:NW,height:NH,rx:12},g);
+      mk(svg,"text",{x:14,y:27,"class":"t"},g).textContent=s.t;
+      mk(svg,"text",{x:14,y:46,"class":"s"},g).textContent=s.s;
+      mk(svg,"text",{x:NW-12,y:20,"class":"s","text-anchor":"end"},g).textContent="0"+(j+1);
+      f.nodes.push(g);
+    });
+    f.pk=mk(svg,"circle",{r:5,"class":"packet"});f.pk.style.display="none";
+  };
+  f.paint=function(now,isStill){
+    var moving=!isStill,T=FD*8,t=(((now-ft0-f.offset)%T)+T)%T,st=Math.floor(t/FD)%8,fr=(t%FD)/FD;
+    f.nodes.forEach(function(g,i){g.classList.toggle("active",moving&&i===st);g.classList.toggle("seen",moving?i<st:true)});
+    f.edges.forEach(function(p,i){p.classList.toggle("on",moving&&i===st&&fr>.4)});
+    if(moving&&fr>.4){var p=f.edges[st],q=p.getPointAtLength(p.getTotalLength()*(fr-.4)/.6);f.pk.setAttribute("cx",q.x);f.pk.setAttribute("cy",q.y);f.pk.setAttribute("class","packet"+(st>=hot[0]&&st<=hot[1]?" bad":""));f.pk.style.display=""}
+    else f.pk.style.display="none";
+    cap.textContent=moving?("step "+(st+1)+" / 8 · "+steps[st].t):"paused";
+  };
+  f.build();return f;
+}
+flows.push(Flow(document.getElementById("svg-before"),document.getElementById("cap-before"),[
+ {t:"git push",s:"PR opened",k:""},
+ {t:"CI runs",s:"checks start",k:""},
+ {t:"Check fails",s:"Test ✗",k:"bad"},
+ {t:"You notice",s:"minutes later",k:"human"},
+ {t:"Copy the log",s:"open Actions",k:"human"},
+ {t:"Paste to Claude",s:"you retype it",k:"human"},
+ {t:"Claude fixes",s:"reads log, fixes",k:""},
+ {t:"git push",s:"the fix, same PR",k:""}
+],[1,5]));
+flows.push(Flow(document.getElementById("svg-after"),document.getElementById("cap-after"),[
+ {t:"git push",s:"PR opened",k:""},
+ {t:"CI runs",s:"checks start",k:""},
+ {t:"Check fails",s:"Test ✗",k:"bad"},
+ {t:"Stop hook",s:"turn ends, wakes",k:""},
+ {t:"gh pr list",s:"one call, your PRs",k:""},
+ {t:"Claude fixes",s:"reads log, fixes",k:""},
+ {t:"git push",s:"the fix, same PR",k:""},
+ {t:"CI green",s:"✓ all checks pass",k:""}
+],[1,4]));
+flows[1].offset=FD*3; /* the two loops are out of step, so each can be read on its own */
+addEventListener("resize",function(){if((innerWidth<640)!==flows[0].narrow)flows.forEach(function(f){f.build()})});
+(function floop(now){
+  requestAnimationFrame(floop);
+  flows.forEach(function(f){f.paint(now,still)});
+})(performance.now());
+
+/* headline scramble */
+var scr=document.getElementById("scr");
+function scramble(){
+  if(still)return;
+  var final="Your agent hears CI fail.",chars="!<>-_\\/[]{}=+*^?#01",n=0,total=26;
+  var iv=setInterval(function(){
+    var out="";
+    for(var i=0;i<final.length;i++){
+      var done=i<final.length*n/total;
+      out+=final[i]===" "?" ":(done?final[i]:chars[Math.random()*chars.length|0]);
+    }
+    scr.textContent=out;n++;
+    if(n>total){clearInterval(iv);scr.innerHTML='Your agent hears CI <span class="x">fail.</span>'}
+  },38);
+}
+setTimeout(scramble,250);
+
+/* reveal */
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target);if(e.target.querySelector&&e.target.querySelector("[data-to]"))count(e.target.querySelector("[data-to]"))}})},{threshold:.15});
+document.querySelectorAll(".reveal").forEach(function(el){if(reduce)el.classList.add("in");else io.observe(el)});
+function count(el){var to=+el.dataset.to,from=+el.textContent;if(still||from===to){el.textContent=to;return}var t0=performance.now();(function s(t){var p=Math.min(1,Math.max(0,(t-t0)/1100));el.textContent=Math.round(from+(to-from)*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(s)})(t0)}
+if(reduce)document.querySelectorAll("[data-to]").forEach(function(e){e.textContent=e.dataset.to});
+
+/* terminal demo */
+var lines=[
+ ["dim","$ git push origin fix/login-timeout"],
+ ["","remote: pull request #212 updated"],
+ ["dim","…the turn ends. You switch tabs…"],
+ ["bad","✗ CI: Test failed (1 of 2,310)"],
+ ["dim","$ claude   ← you come back"],
+ ["ok","hook ▸ CI is failing on pull/212: Test"],
+ ["","claude ▸ reading the failed log… the retry test expects 3 attempts, the code makes 2"],
+ ["","claude ▸ fixed, ran it locally, pushed 4f19a2c"],
+ ["ok","✓ CI: all checks passing"]
+];
+var tty=document.getElementById("tty"),run=0;
+function type(){
+  var id=++run;tty.innerHTML="";
+  if(still){tty.innerHTML=lines.map(function(l){return '<span class="'+l[0]+'">'+l[1]+"</span>"}).join("\n");return}
+  var li=0;
+  (function next(){
+    if(id!==run||li>=lines.length)return;
+    var l=lines[li++],span=document.createElement("span");span.className=l[0];tty.appendChild(span);
+    var ci=0;
+    (function ch(){
+      if(id!==run)return;
+      span.textContent=l[1].slice(0,ci++);
+      if(ci<=l[1].length){setTimeout(ch,l[0]==="dim"?12:9)}else{tty.appendChild(document.createTextNode("\n"));setTimeout(next,360)}
+    })();
+  })();
+}
+var started=false,tio=new IntersectionObserver(function(es){if(es[0].isIntersecting&&!started){started=true;type()}},{threshold:.4});
+tio.observe(document.querySelector(".term"));
+document.getElementById("replay").onclick=type;
+
+/* ladder */
+var rungsDef=[
+ ["A turn ends","Claude Code calls the Stop hook"],
+ ["Already continuing?","stop_hook_active: skip, so it can never loop"],
+ ["Which branches?","every worktree of this repo, minus main"],
+ ["One gh call","your open PRs; match branches to them"],
+ ["Any failed check?","new (PR, commit, failures) only"]
+];
+var scen=[
+ {n:"CI is red",on:5,res:'<span class="ok">▸ block</span> “CI is failing on pull/212: Test. Find the cause, fix it, push.” Claude carries on.'},
+ {n:"Already reported",on:5,stop:5,res:'<span class="dim">▸ silent.</span> That commit and failure set is in the seen file. Nothing repeats.'},
+ {n:"All green",on:5,stop:5,res:'<span class="dim">▸ silent.</span> No failed check on any of your PRs.'},
+ {n:"Hook re-entered",on:2,stop:2,res:'<span class="dim">▸ silent.</span> Claude is already continuing from a stop hook, so the hook steps aside.'},
+ {n:"No PR yet",on:4,stop:4,res:'<span class="dim">▸ silent.</span> The worktrees have branches, but none has an open PR of yours.'}
+];
+var lad=document.getElementById("ladder"),tabs=document.getElementById("tabs"),res=document.getElementById("result");
+rungsDef.forEach(function(s,i){var li=document.createElement("li");li.className="rung";li.innerHTML="<b>0"+(i+1)+"</b><span>"+s[0]+'</span><span class="r">'+s[1]+"</span>";lad.appendChild(li)});
+function pick(k){
+  var sc=scen[k],rungs=lad.children;
+  [].forEach.call(tabs.children,function(t,i){t.setAttribute("aria-selected",i===k)});
+  for(var i=0;i<rungs.length;i++){rungs[i].classList.remove("on","stop")}
+  var d=still?0:170;
+  for(let i=0;i<sc.on;i++)setTimeout(function(){rungs[i].classList.add("on");if(sc.stop&&i===sc.stop-1)rungs[i].classList.add("stop")},i*d);
+  setTimeout(function(){res.innerHTML=sc.res},sc.on*d);
+}
+scen.forEach(function(s,i){var b=document.createElement("button");b.className="tab";b.setAttribute("role","tab");b.textContent=s.n;b.onclick=function(){pick(i)};tabs.appendChild(b)});
+pick(0);
+
+/* install tabs */
+var snippets=[
+ "git clone https://github.com/OWNER/failedci2claude && cd failedci2claude && ./install.sh",
+ "# open a new Claude Code session, end a turn, then:\ntail -3 ~/.claude/hooks/failedci2claude.log",
+ "rm ~/.claude/hooks/failedci2claude.py\n# then delete the failedci2claude entry from \"Stop\" in ~/.claude/settings.json"
+];
+var ic=document.getElementById("icode"),cur=0;
+function show(i){cur=i;ic.textContent=snippets[i];[].forEach.call(document.querySelectorAll("#itabs .tab"),function(t,j){t.setAttribute("aria-selected",j===i)})}
+document.querySelectorAll("#itabs .tab").forEach(function(t){t.onclick=function(){show(+t.dataset.i)}});
+show(0);
+document.getElementById("copy").onclick=function(){var b=this;(navigator.clipboard?navigator.clipboard.writeText(snippets[cur]):Promise.reject()).then(function(){b.textContent="copied ✓"},function(){b.textContent="select + ⌘C"});setTimeout(function(){b.textContent="copy"},1600)};
+})();
+</script>
+</body>
+</html>
