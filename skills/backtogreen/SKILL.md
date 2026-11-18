@@ -26,10 +26,14 @@ The session that opened a pull request owns its CI. A skill only runs when it is
 5. Run the checks for the files you touched, commit, and push to the PR branch. Merge the base branch into the PR branch when they conflict; do not rebase or force-push a branch others use.
 6. Before `git commit --amend`, run `git status`: after a merge that did nothing, an amend rewrites the previous commit and the push is rejected.
 
+## Resolve a merge conflict
+
+A conflict keeps a pull request from going green even when every check passes. In the PR's worktree: `git fetch <remote> <base>`, then `git merge FETCH_HEAD` (the remote that points at the repository, not a stale local copy of the base). Resolve keeping the intent of both sides, run the checks for the files you touched, commit and push. Ask only if a conflict needs a product decision. Never rebase or force-push a branch others use. If `git merge` says "Already up to date" but GitHub still shows a conflict, the event was for an older head: re-check.
+
 ## Be told when CI fails
 
 - **The desktop app's Auto-fix** (Claude desktop app) wakes an idle session on CI failures, merge conflicts and review comments. Turn it on per pull request. This is the one that works while you are away.
-- **The failedci2claude Stop hook** (https://backtogreen.flisk.si) tells the session when a turn ends and one of your open pull requests has a failed check. It runs when a turn ends, so it cannot wake an idle session. It reads your pull requests with one `gh pr list` call and reports each failure once.
+- **The failedci2claude Stop hook** (https://backtogreen.flisk.si) tells the session when a turn ends and one of your open pull requests has a failed check or a merge conflict. It runs when a turn ends, so it cannot wake an idle session. It reads your pull requests with one `gh pr list` call and reports each failure once.
 
 Install the hook only after the user agrees, because it edits `~/.claude/settings.json`:
 

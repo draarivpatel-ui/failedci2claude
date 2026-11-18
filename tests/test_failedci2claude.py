@@ -58,9 +58,10 @@ def env(tmp_path: Path):
     return run, set_prs, home
 
 
-def pr(number: int, branch: str, checks: list[dict], sha: str = "abc") -> dict:
+def pr(number: int, branch: str, checks: list[dict], sha: str = "abc", **extra) -> dict:
     return {"number": number, "url": URL.format(n=number), "headRefName": branch, "headRefOid": sha,
-            "statusCheckRollup": checks}
+            "baseRefName": "main", "mergeable": "MERGEABLE", "mergeStateStatus": "CLEAN",
+            "statusCheckRollup": checks, **extra}
 
 
 FAIL = {"name": "Test", "conclusion": "FAILURE"}
@@ -115,3 +116,34 @@ def test_a_failing_gh_is_logged_not_silent(env, tmp_path):
     assert run() == ""
     log = (home / ".claude" / "hooks" / "failedci2claude.log").read_text()
     assert "gh pr list failed" in log and "auth required" in log
+
+
+def test_a_merge_conflict_is_reported_even_when_every_check_is_green(env):
+    run, set_prs, _ = env
+    set_prs(pr(7, "feature-a", [OK], mergeable="CONFLICTING", mergeStateStatus="DIRTY"))
+    out = json.loads(run())
+    assert out["decision"] == "block"
+    assert "pull/7" in out["reason"] and "merge conflicts with main" in out["reason"]
+    assert "never rebase or force-push" in out["reason"]
+
+
+def test_a_conflict_is_reported_once_per_commit_and_a_new_commit_reports_it_again(env):
+    run, set_prs, _ = env
+    set_prs(pr(7, "feature-a", [OK], mergeable="CONFLICTING"))
+    assert run()
+    assert run() == ""
+    set_prs(pr(7, "feature-a", [OK], sha="def", mergeable="CONFLICTING"))
+    assert run()
+
+
+def test_a_failed_check_and_a_conflict_are_one_report(env):
+    run, set_prs, _ = env
+    set_prs(pr(7, "feature-a", [FAIL], mergeable="CONFLICTING"))
+    reason = json.loads(run())["reason"]
+    assert "failed checks: Test" in reason and "merge conflicts with main" in reason
+
+
+def test_an_unknown_merge_state_is_not_a_conflict(env):
+    run, set_prs, _ = env
+    set_prs(pr(7, "feature-a", [OK], mergeable="UNKNOWN", mergeStateStatus="UNKNOWN"))
+    assert run() == ""

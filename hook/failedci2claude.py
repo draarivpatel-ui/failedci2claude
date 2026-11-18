@@ -3,7 +3,7 @@
 
 When a turn ends, it looks at the branches checked out in this repo's worktrees, finds the ones with an open pull
 request of yours (one `gh pr list` call), and if any check failed it hands Claude the failing check names so the
-session can fix them. Each (PR, commit, failing set) is reported once, so it cannot loop.
+session can fix them. It also reports a merge conflict with the base branch. Each (PR, commit, problem) is reported once, so it cannot loop.
 """
 import json, os, subprocess, sys, time
 
@@ -55,7 +55,7 @@ def main():
     try:
         out = run(
             ["gh", "pr", "list", "--state", "open", "--author", "@me", "--limit", "50",
-             "--json", "number,url,headRefName,headRefOid,statusCheckRollup"],
+             "--json", "number,url,headRefName,headRefOid,baseRefName,mergeable,mergeStateStatus,statusCheckRollup"],
             cwd, 25,
         )
         if out.returncode != 0:
@@ -79,13 +79,20 @@ def main():
             for c in pr.get("statusCheckRollup") or []
             if (c.get("conclusion") or c.get("state") or "").upper() in BAD
         })
-        if not failing:
+        # A merge conflict is not a check, but it keeps a pull request from going green just the same.
+        conflict = pr.get("mergeable") == "CONFLICTING" or pr.get("mergeStateStatus") == "DIRTY"
+        if not failing and not conflict:
             continue
-        key = f"{pr['number']}:{pr['headRefOid']}:{','.join(failing)}"
+        key = f"{pr['number']}:{pr['headRefOid']}:{','.join(failing)}" + (":conflict" if conflict else "")
         if key in seen:
             continue
         seen.append(key)
-        reasons.append(f"{pr['url']} (branch {branch}): {', '.join(failing)}")
+        parts = []
+        if failing:
+            parts.append("failed checks: " + ", ".join(failing))
+        if conflict:
+            parts.append("merge conflicts with " + (pr.get("baseRefName") or "the base branch"))
+        reasons.append(f"{pr['url']} (branch {branch}): " + "; ".join(parts))
     log(f"checked {len(branches)} branches, {len(prs)} open PRs; failing: {reasons or 'none'}")
     if not reasons:
         return
@@ -97,9 +104,11 @@ def main():
     print(json.dumps({
         "decision": "block",
         "reason": (
-            "CI is failing on: " + "; ".join(reasons) + ". "
-            "For each, find the cause (gh run list --branch <branch>; gh run view <id> --log-failed), "
-            "fix it in that branch's worktree, verify, commit and push."
+            "Your pull requests need attention: " + "; ".join(reasons) + ". "
+            "Work in each branch's worktree. For a failed check, find the cause "
+            "(gh run list --branch <branch>; gh run view <id> --log-failed), fix it, verify, commit and push. "
+            "For a merge conflict, fetch the base branch, merge it into the PR branch (never rebase or force-push), "
+            "resolve keeping the intent of both sides, run the checks for the files you touched, commit and push."
         ),
     }))
 
