@@ -5,7 +5,7 @@ set -eu
 
 DIR="$HOME/.claude/hooks"
 SETTINGS="$HOME/.claude/settings.json"
-RAW="${FAILEDCI_RAW:-https://raw.githubusercontent.com/OWNER/failedci2claude/main/hook/failedci2claude.py}"
+RAW="${FAILEDCI_RAW:-https://raw.githubusercontent.com/flisk-sh/failedci2claude/main/hook/failedci2claude.py}"
 
 mkdir -p "$DIR"
 SRC="$(cd "$(dirname "$0")" 2>/dev/null && pwd)/hook/failedci2claude.py"

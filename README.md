@@ -6,7 +6,7 @@ that opened the PR is the one that fixes it.
 ## Install
 
 ```sh
-git clone https://github.com/OWNER/failedci2claude && cd failedci2claude && ./install.sh
+git clone https://github.com/flisk-sh/failedci2claude && cd failedci2claude && ./install.sh
 ```
 
 Needs `python3` and the GitHub CLI (`gh auth login`). Hooks load when a session starts, so open a **new** Claude Code
