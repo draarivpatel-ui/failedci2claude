@@ -25,8 +25,8 @@ When a turn ends, the hook:
 
 1. lists the branches checked out in the repo's worktrees (a session often opens its PRs from other worktrees);
 2. makes **one** `gh pr list --author @me` call and matches those branches to your open PRs;
-3. if any check failed, answers Claude with the failing check names, so it finds the cause, fixes it and pushes;
-4. remembers each (PR, commit, failing set) in `~/.claude/hooks/failedci2claude.seen.json`, so a failure is reported once.
+3. if any check failed, or the pull request has a merge conflict with its base branch, answers Claude with what is wrong, so it finds the cause (or merges the base branch in), fixes it and pushes;
+4. remembers each (PR, commit, problem) in `~/.claude/hooks/failedci2claude.seen.json`, so a failure is reported once.
 
 Every run appends one line to `~/.claude/hooks/failedci2claude.log`. If the hook seems silent, read that file: no line
 means it never ran, a line saying `gh ...` means `gh` is missing or not signed in.
