@@ -58,7 +58,11 @@ h2{font-family:var(--mono);font-size:clamp(24px,4vw,40px);line-height:1.12;margi
 .node text.t{fill:var(--fg);font-family:var(--mono);font-size:14px;font-weight:700}
 .node text.s{fill:var(--dim);font-family:var(--mono);font-size:10.5px}
 .node.active text.t{fill:#fff}
-.node text.t.w{font-size:12px}.node text.s.w{font-size:9.5px}
+.node text.t.w{font-size:11.5px}.node text.t.n{font-size:11px}.node text.s.w{font-size:9.5px}
+.node .ic{fill:none;stroke:#7d8b83;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:stroke .25s}
+.node.seen .ic{stroke:#4fae7c}.node.active .ic{stroke:var(--acc)}
+.node.bad .ic,.node.bad.seen .ic{stroke:var(--bad)}.node.human .ic,.node.human.seen .ic{stroke:#e0b455}
+.node.human.active .ic{stroke:#ffcc66}.node.good .ic{stroke:var(--acc)}
 .port{fill:#0c100e;stroke:#3a4a42;stroke-width:1.5}
 .packet{fill:var(--acc);filter:drop-shadow(0 0 6px var(--acc))}
 .packet.bad{fill:var(--bad);filter:drop-shadow(0 0 6px var(--bad))}
@@ -135,9 +139,9 @@ footer .big{color:var(--fg);font-size:18px;margin-bottom:12px}
 
 <main>
 <header class="hero"><div class="wrap">
-  <div class="eyebrow">A Claude Code Stop hook · MIT</div>
+  <div class="eyebrow">For Claude Code and GitHub pull requests · MIT</div>
   <h1><span id="scr" aria-label="Your agent hears CI fail.">Your agent hears CI <span class="x">fail.</span></span></h1>
-  <p class="lede">You push. CI goes red. The session that opened the pull request is told which checks failed, finds the cause, and fixes it. You are not the messenger.</p>
+  <p class="lede">You push to a pull request. GitHub’s checks fail. The Claude session that opened it is told which check failed, finds the cause, and fixes it. You are not the messenger.</p>
   <div class="btns"><a class="btn p" href="#install">Install in two lines</a><a class="btn" href="#how">How it works ↓</a></div>
   <div class="flows">
     <div class="card flow">
@@ -251,12 +255,24 @@ if(reduce){for(var k=0;k<90;k++)draw()}
 /* hero flows: two n8n-style node graphs, looping (before: by hand, after: the hook) */
 var NS="http://www.w3.org/2000/svg",FD=1300,ft0=performance.now(),flows=[];
 function mk(svg,n,a,p){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e}
+var ICONS={
+ push:[["path",{d:"M12 16V4M7 9l5-5 5 5M4 20h16"}]],
+ checks:[["path",{d:"M10 6h10M10 12h10M10 18h10M3.5 6l1.6 1.6L8 4.6M3.5 12l1.6 1.6L8 10.6M3.5 18l1.6 1.6L8 16.6"}]],
+ fail:[["circle",{cx:12,cy:12,r:9}],["path",{d:"M9 9l6 6M15 9l-6 6"}]],
+ eye:[["path",{d:"M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"}],["circle",{cx:12,cy:12,r:3}]],
+ clip:[["path",{d:"M9 4h6v3H9zM7 5H5v16h14V5h-2M8 12h8M8 16h5"}]],
+ chat:[["path",{d:"M4 5h16v11H9l-5 4z"}]],
+ spark:[["path",{d:"M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"}]],
+ bell:[["path",{d:"M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"}]],
+ find:[["circle",{cx:11,cy:11,r:6}],["path",{d:"M16 16l5 5"}]],
+ done:[["circle",{cx:12,cy:12,r:9}],["path",{d:"M8 12l3 3 5-6"}]]
+};
 function Flow(svg,cap,steps,hot){
   var f={narrow:null,pos:[],nodes:[],edges:[],pk:null,NW:160,offset:0};
   f.build=function(){
     var NW,NH=64,i,pos=[];f.narrow=innerWidth<640;svg.innerHTML="";f.nodes=[];f.edges=[];
-    if(!f.narrow){NW=112;NH=56;for(i=0;i<8;i++)pos.push({x:4+i*128,y:6});svg.setAttribute("viewBox","0 0 1032 108")}
-    else{NW=140;var cxs=[10,190],ord=[[0,0],[1,0],[1,1],[0,1],[0,2],[1,2],[1,3],[0,3]];for(i=0;i<8;i++)pos.push({x:cxs[ord[i][0]],y:10+ord[i][1]*120});svg.setAttribute("viewBox","-30 0 380 470")}
+    if(!f.narrow){NW=112;NH=88;for(i=0;i<8;i++)pos.push({x:4+i*128,y:6});svg.setAttribute("viewBox","0 0 1032 150")}
+    else{NW=150;var cxs=[10,190],ord=[[0,0],[1,0],[1,1],[0,1],[0,2],[1,2],[1,3],[0,3]];for(i=0;i<8;i++)pos.push({x:cxs[ord[i][0]],y:10+ord[i][1]*120});svg.setAttribute("viewBox","-30 0 380 470")}
     f.NW=NW;f.pos=pos;
     var eg=mk(svg,"g");
     for(i=0;i<8;i++){
@@ -269,12 +285,12 @@ function Flow(svg,cap,steps,hot){
       mk(svg,"circle",{cx:p1[0],cy:p1[1],r:4,"class":"port"},eg);mk(svg,"circle",{cx:p2[0],cy:p2[1],r:4,"class":"port"},eg);
     }
     steps.forEach(function(s,j){
-      var p=pos[j],g=mk(svg,"g",{"class":"node"+(s.k?" "+s.k:""),transform:"translate("+p.x+","+p.y+")"});
+      var p=pos[j],g=mk(svg,"g",{"class":"node"+(s.k?" "+s.k:""),transform:"translate("+p.x+","+p.y+")"}),wide=!f.narrow;
       mk(svg,"rect",{width:NW,height:NH,rx:11},g);
-      var wide=!f.narrow;
-      mk(svg,"text",{x:wide?11:14,y:wide?24:27,"class":"t"+(wide?" w":"")},g).textContent=s.t;
-      mk(svg,"text",{x:wide?11:14,y:wide?42:46,"class":"s"+(wide?" w":"")},g).textContent=s.s;
-      if(NW>=160)mk(svg,"text",{x:NW-12,y:20,"class":"s","text-anchor":"end"},g).textContent="0"+(j+1);
+      var ic=mk(svg,"g",{"class":"ic",transform:wide?"translate("+(NW/2-14)+",13) scale(1.17)":"translate(12,"+(NH/2-14)+") scale(1.17)"},g);
+      ICONS[s.i].forEach(function(e){mk(svg,e[0],e[1],ic)});
+      mk(svg,"text",{x:wide?NW/2:50,y:wide?62:NH/2-3,"class":"t"+(wide?" w":" n"),"text-anchor":wide?"middle":"start"},g).textContent=s.t;
+      mk(svg,"text",{x:wide?NW/2:50,y:wide?78:NH/2+14,"class":"s"+(wide?" w":""),"text-anchor":wide?"middle":"start"},g).textContent=s.s;
       f.nodes.push(g);
     });
     f.pk=mk(svg,"circle",{r:5,"class":"packet"});f.pk.style.display="none";
@@ -290,24 +306,24 @@ function Flow(svg,cap,steps,hot){
   f.build();return f;
 }
 flows.push(Flow(document.getElementById("svg-before"),document.getElementById("cap-before"),[
- {t:"git push",s:"PR opened",k:""},
- {t:"CI runs",s:"checks start",k:""},
- {t:"CI fails",s:"Test ✗",k:"bad"},
- {t:"You notice",s:"minutes later",k:"human"},
- {t:"Copy log",s:"open Actions",k:"human"},
- {t:"Paste it",s:"you retype it",k:"human"},
- {t:"Claude fixes",s:"reads, fixes",k:""},
- {t:"git push",s:"fix, same PR",k:""}
+ {t:"You push",s:"to your PR",i:"push",k:""},
+ {t:"GitHub checks",s:"tests run",i:"checks",k:""},
+ {t:"A check fails",s:"red ✗",i:"fail",k:"bad"},
+ {t:"You spot it",s:"minutes later",i:"eye",k:"human"},
+ {t:"Copy the error",s:"from GitHub",i:"clip",k:"human"},
+ {t:"Paste in chat",s:"by hand",i:"chat",k:"human"},
+ {t:"Claude fixes",s:"reads, edits",i:"spark",k:""},
+ {t:"You push again",s:"same PR",i:"push",k:""}
 ],[1,5]));
 flows.push(Flow(document.getElementById("svg-after"),document.getElementById("cap-after"),[
- {t:"git push",s:"PR opened",k:""},
- {t:"CI runs",s:"checks start",k:""},
- {t:"CI fails",s:"Test ✗",k:"bad"},
- {t:"Stop hook",s:"turn ends",k:""},
- {t:"gh pr list",s:"one gh call",k:""},
- {t:"Claude fixes",s:"reads, fixes",k:""},
- {t:"git push",s:"fix, same PR",k:""},
- {t:"CI green",s:"✓ all pass",k:""}
+ {t:"You push",s:"to your PR",i:"push",k:""},
+ {t:"GitHub checks",s:"tests run",i:"checks",k:""},
+ {t:"A check fails",s:"red ✗",i:"fail",k:"bad"},
+ {t:"Claude is told",s:"turn ends",i:"bell",k:""},
+ {t:"Finds your PR",s:"one lookup",i:"find",k:""},
+ {t:"Claude fixes",s:"reads, edits",i:"spark",k:""},
+ {t:"Pushes the fix",s:"same PR",i:"push",k:""},
+ {t:"Back to green",s:"all ✓",i:"done",k:"good"}
 ],[1,4]));
 flows[1].offset=FD*3; /* the two loops are out of step, so each can be read on its own */
 addEventListener("resize",function(){if((innerWidth<640)!==flows[0].narrow)flows.forEach(function(f){f.build()})});
