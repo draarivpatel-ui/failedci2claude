@@ -36,6 +36,12 @@ means it never ran, a line saying `gh ...` means `gh` is missing or not signed i
 It runs **when a turn ends**. A session that sits idle is not woken by a failure; for that, use the desktop app's
 Auto-fix. The two complement each other.
 
+## This repository uses it too
+
+`.claude/settings.json` registers the hook and `.claude/skills/backtogreen` is the skill, so opening this repository in
+Claude Code loads both with no install step. The files are links to `hook/failedci2claude.py` and `skills/backtogreen`,
+so there is one source for each.
+
 ## Test
 
 ```sh
