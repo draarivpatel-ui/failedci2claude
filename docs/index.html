@@ -20,11 +20,11 @@ nav .brand{font-weight:700;color:var(--acc);letter-spacing:.02em;margin-right:au
 nav a{text-decoration:none;color:var(--dim)}nav a:hover{color:var(--fg)}
 nav .gh{border:1px solid var(--line);padding:5px 10px;border-radius:7px;color:var(--fg)}
 @media(max-width:700px){nav .hide{display:none}}
-.hero{padding:70px 0 60px}
+.hero{padding:34px 0 26px}
 .eyebrow{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.12em;text-transform:uppercase}
-h1{font-family:var(--mono);font-size:clamp(36px,7.2vw,80px);line-height:1.02;margin:14px 0 18px;letter-spacing:-.03em;overflow-wrap:anywhere}
+h1{font-family:var(--mono);font-size:clamp(32px,5.2vw,58px);line-height:1.04;margin:10px 0 12px;letter-spacing:-.03em;overflow-wrap:anywhere}
 h1 .x{color:var(--acc)}
-.lede{font-size:clamp(16px,2vw,20px);color:#c4cfc7;max-width:640px;margin:0 0 28px}
+.lede{font-size:clamp(15px,1.7vw,18px);color:#c4cfc7;max-width:640px;margin:0 0 18px}
 .btns{display:flex;gap:12px;flex-wrap:wrap}
 .btn{font-family:var(--mono);font-size:14px;padding:11px 18px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer;text-decoration:none;transition:.2s}
 .btn.p{background:var(--acc);color:#04130a;border-color:var(--acc);font-weight:700}
@@ -38,9 +38,9 @@ h2{font-family:var(--mono);font-size:clamp(24px,4vw,40px);line-height:1.12;margi
 .reveal.in{opacity:1;transform:none}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px}
 /* hero flows: n8n-style node graphs */
-.flows{display:grid;gap:16px;margin-top:46px}
-.flow{padding:16px 18px 12px;background:rgba(14,18,16,.82);backdrop-filter:blur(4px)}
-.flow .cap{display:flex;justify-content:space-between;gap:12px;font-family:var(--mono);font-size:12px;color:var(--dim);margin-bottom:8px}
+.flows{display:grid;gap:10px;margin-top:22px}
+.flow{padding:10px 14px 4px;background:rgba(14,18,16,.82);backdrop-filter:blur(4px)}
+.flow .cap{display:flex;justify-content:space-between;gap:12px;font-family:var(--mono);font-size:12px;color:var(--dim);margin-bottom:2px}
 .tag{font-style:normal;font-size:10.5px;letter-spacing:.12em;padding:3px 8px;border-radius:999px;margin-right:8px}
 .tbad{background:rgba(255,107,107,.14);color:var(--bad)}.tok{background:rgba(121,242,168,.14);color:var(--acc)}
 .flow .cap b{color:var(--acc);font-weight:500;white-space:nowrap}
@@ -58,6 +58,7 @@ h2{font-family:var(--mono);font-size:clamp(24px,4vw,40px);line-height:1.12;margi
 .node text.t{fill:var(--fg);font-family:var(--mono);font-size:14px;font-weight:700}
 .node text.s{fill:var(--dim);font-family:var(--mono);font-size:10.5px}
 .node.active text.t{fill:#fff}
+.node text.t.w{font-size:12px}.node text.s.w{font-size:9.5px}
 .port{fill:#0c100e;stroke:#3a4a42;stroke-width:1.5}
 .packet{fill:var(--acc);filter:drop-shadow(0 0 6px var(--acc))}
 .packet.bad{fill:var(--bad);filter:drop-shadow(0 0 6px var(--bad))}
@@ -254,13 +255,14 @@ function Flow(svg,cap,steps,hot){
   var f={narrow:null,pos:[],nodes:[],edges:[],pk:null,NW:160,offset:0};
   f.build=function(){
     var NW,NH=64,i,pos=[];f.narrow=innerWidth<640;svg.innerHTML="";f.nodes=[];f.edges=[];
-    if(!f.narrow){NW=160;var xs=[10,210,410,610];for(i=0;i<8;i++)pos.push(i<4?{x:xs[i],y:30}:{x:xs[7-i],y:210});svg.setAttribute("viewBox","0 0 780 310")}
+    if(!f.narrow){NW=112;NH=56;for(i=0;i<8;i++)pos.push({x:4+i*128,y:6});svg.setAttribute("viewBox","0 0 1032 108")}
     else{NW=140;var cxs=[10,190],ord=[[0,0],[1,0],[1,1],[0,1],[0,2],[1,2],[1,3],[0,3]];for(i=0;i<8;i++)pos.push({x:cxs[ord[i][0]],y:10+ord[i][1]*120});svg.setAttribute("viewBox","-30 0 380 470")}
     f.NW=NW;f.pos=pos;
     var eg=mk(svg,"g");
     for(i=0;i<8;i++){
       var a=pos[i],b=pos[(i+1)%8],d,p1,p2;
-      if(f.narrow&&i===7){p1=[a.x,a.y+NH/2];p2=[b.x,b.y+NH/2];d="M"+p1+" C-26,"+p1[1]+" -26,"+p2[1]+" "+p2}
+      if(!f.narrow&&i===7){p1=[a.x+NW/2,a.y+NH];p2=[b.x+NW/2,b.y+NH];d="M"+p1+" C"+p1[0]+","+(a.y+NH+44)+" "+p2[0]+","+(a.y+NH+44)+" "+p2}
+      else if(f.narrow&&i===7){p1=[a.x,a.y+NH/2];p2=[b.x,b.y+NH/2];d="M"+p1+" C-26,"+p1[1]+" -26,"+p2[1]+" "+p2}
       else if(a.y===b.y){var r=b.x>a.x;p1=[a.x+(r?NW:0),a.y+NH/2];p2=[b.x+(r?0:NW),b.y+NH/2];var m=(p1[0]+p2[0])/2;d="M"+p1+" C"+m+","+p1[1]+" "+m+","+p2[1]+" "+p2}
       else{var dn=b.y>a.y;p1=[a.x+NW/2,a.y+(dn?NH:0)];p2=[b.x+NW/2,b.y+(dn?0:NH)];var my=(p1[1]+p2[1])/2;d="M"+p1+" C"+p1[0]+","+my+" "+p2[0]+","+my+" "+p2}
       f.edges.push(mk(svg,"path",{d:d,"class":"edge"+(i>=hot[0]&&i<=hot[1]?" bad":"")},eg));
@@ -268,9 +270,10 @@ function Flow(svg,cap,steps,hot){
     }
     steps.forEach(function(s,j){
       var p=pos[j],g=mk(svg,"g",{"class":"node"+(s.k?" "+s.k:""),transform:"translate("+p.x+","+p.y+")"});
-      mk(svg,"rect",{width:NW,height:NH,rx:12},g);
-      mk(svg,"text",{x:14,y:27,"class":"t"},g).textContent=s.t;
-      mk(svg,"text",{x:14,y:46,"class":"s"},g).textContent=s.s;
+      mk(svg,"rect",{width:NW,height:NH,rx:11},g);
+      var wide=!f.narrow;
+      mk(svg,"text",{x:wide?11:14,y:wide?24:27,"class":"t"+(wide?" w":"")},g).textContent=s.t;
+      mk(svg,"text",{x:wide?11:14,y:wide?42:46,"class":"s"+(wide?" w":"")},g).textContent=s.s;
       if(NW>=160)mk(svg,"text",{x:NW-12,y:20,"class":"s","text-anchor":"end"},g).textContent="0"+(j+1);
       f.nodes.push(g);
     });
@@ -289,22 +292,22 @@ function Flow(svg,cap,steps,hot){
 flows.push(Flow(document.getElementById("svg-before"),document.getElementById("cap-before"),[
  {t:"git push",s:"PR opened",k:""},
  {t:"CI runs",s:"checks start",k:""},
- {t:"Check fails",s:"Test ✗",k:"bad"},
+ {t:"CI fails",s:"Test ✗",k:"bad"},
  {t:"You notice",s:"minutes later",k:"human"},
- {t:"Copy the log",s:"open Actions",k:"human"},
- {t:"Paste in chat",s:"you retype it",k:"human"},
- {t:"Claude fixes",s:"reads log, fixes",k:""},
- {t:"git push",s:"the fix, same PR",k:""}
+ {t:"Copy log",s:"open Actions",k:"human"},
+ {t:"Paste it",s:"you retype it",k:"human"},
+ {t:"Claude fixes",s:"reads, fixes",k:""},
+ {t:"git push",s:"fix, same PR",k:""}
 ],[1,5]));
 flows.push(Flow(document.getElementById("svg-after"),document.getElementById("cap-after"),[
  {t:"git push",s:"PR opened",k:""},
  {t:"CI runs",s:"checks start",k:""},
- {t:"Check fails",s:"Test ✗",k:"bad"},
- {t:"Stop hook",s:"turn ends, wakes",k:""},
- {t:"gh pr list",s:"one call, your PRs",k:""},
- {t:"Claude fixes",s:"reads log, fixes",k:""},
- {t:"git push",s:"the fix, same PR",k:""},
- {t:"CI green",s:"✓ all checks pass",k:""}
+ {t:"CI fails",s:"Test ✗",k:"bad"},
+ {t:"Stop hook",s:"turn ends",k:""},
+ {t:"gh pr list",s:"one gh call",k:""},
+ {t:"Claude fixes",s:"reads, fixes",k:""},
+ {t:"git push",s:"fix, same PR",k:""},
+ {t:"CI green",s:"✓ all pass",k:""}
 ],[1,4]));
 flows[1].offset=FD*3; /* the two loops are out of step, so each can be read on its own */
 addEventListener("resize",function(){if((innerWidth<640)!==flows[0].narrow)flows.forEach(function(f){f.build()})});
