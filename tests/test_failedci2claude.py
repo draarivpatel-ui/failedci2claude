@@ -85,6 +85,24 @@ def test_the_same_failure_is_reported_once_and_a_new_commit_again(env):
     assert run()
 
 
+def test_failures_in_two_repositories_with_the_same_pr_number_and_commit_are_reported(env, tmp_path):
+    run, set_prs, _ = env
+    repo = tmp_path / "repo"
+    other = tmp_path / "other"
+    git(tmp_path, "clone", "-q", str(repo), str(other))
+    git(other, "switch", "-q", "-c", "feature-a")
+    sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip()
+    set_prs(pr(7, "feature-a", [FAIL], sha=sha))
+    assert URL.format(n=7) in json.loads(run())["reason"]
+
+    other_url = "https://github.com/acme/other/pull/7"
+    set_prs(pr(7, "feature-a", [FAIL], sha=sha, url=other_url))
+    notice = run({"cwd": str(other)})
+    assert notice, "a failure in another repository must not be suppressed"
+    assert other_url in json.loads(notice)["reason"]
+    assert run({"cwd": str(other)}) == ""
+
+
 def test_green_and_unrelated_prs_stay_silent(env):
     run, set_prs, _ = env
     set_prs(pr(7, "feature-a", [OK]), pr(8, "someone-elses-branch", [FAIL]))
