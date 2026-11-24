@@ -83,7 +83,7 @@ def main():
         conflict = pr.get("mergeable") == "CONFLICTING" or pr.get("mergeStateStatus") == "DIRTY"
         if not failing and not conflict:
             continue
-        key = f"{pr['number']}:{pr['headRefOid']}:{','.join(failing)}" + (":conflict" if conflict else "")
+        key = f"{pr['url']}:{pr['headRefOid']}:{','.join(failing)}" + (":conflict" if conflict else "")
         if key in seen:
             continue
         seen.append(key)
